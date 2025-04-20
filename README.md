@@ -8,19 +8,35 @@ The initial concept originated from [link to your Obsidian note or brief descrip
 
 ## Current Status (April 2025)
 
+* **Configuration:**
+    * Core simulation parameters (price sensitivity, consumption rates, trade limits, population thresholds, upkeep costs, etc.) externalized to `config.json`.
+    * UI display parameters (tick delays, colors, sizes) externalized to `config.json`.
+    * Goods definitions (name, base value, properties) externalized to `config.json`.
+    * Production recipes remain externalized in `recipes.json`.
+    * World setup (initial settlement placement, terrain, population, initial wealth/stock) configured in `world_setup.py`.
 * **Core Logic:** Implemented in Python (`trade_logic.py`), featuring:
-    * Settlements with population, terrain, wealth, storage, and labor pools.
-    * Goods with base values, bulk/item tracking (`ItemInstance` for provenance).
-    * Recipe-based production system loaded from `recipes.json`, requiring inputs (goods/labor), respecting terrain constraints, and producing outputs.
-    * Population-driven consumption.
-    * Dynamic local price calculation based on supply/demand ratio.
-    * Basic trade execution based on price differentials between settlements.
-* **Configuration:** Production recipes are externalized in `recipes.json`. World setup (settlements, initial conditions) is handled in `world_setup.py`.
-* **User Interface:** A basic Tkinter UI (`trade_ui.py`) provides:
+    * Settlements with population, terrain, wealth, dynamic storage capacity (larger for cities), and labor pools.
+    * Goods loaded from config, supporting bulk/item tracking (`ItemInstance` for non-bulk provenance).
+    * Recipe-based production system loaded from `recipes.json`.
+    * Population-driven consumption, with larger "cities" (above population threshold) requiring "bread" produced from "grain".
+    * Dynamic local price calculation based on supply/demand ratio (configurable sensitivity, min/max).
+    * Trade execution based on price differentials (configurable profit margin threshold).
+    * Storage upkeep costs deducted from wealth each tick to discourage hoarding.
+* **World Setup:**
+    * `world_setup.py` dynamically creates goods from config.
+    * Generates a configurable number of smaller settlements with randomized placement (improved spacing) alongside predefined major settlements.
+* **User Interface:** A Tkinter UI (`trade_ui.py`) provides:
     * A fullscreen view with dark mode (using `sv_ttk` if available).
-    * Side-by-side display of static setup data (Settlements, Goods, interactive Recipe lookup) and dynamic simulation state (Settlement wealth, storage, prices, labor).
-    * Real-time updates driven by the simulation ticks.
-    * A log of recent trade events.
+    * **Tabbed Interface:** Separates detailed tables from the map visualization.
+    * **Tables Tab:** Displays static setup data (Settlements list, Goods list, interactive Recipe lookup) and dynamic simulation state (Settlement wealth, storage, prices, labor) in sortable tables, plus a log of recent trade events.
+    * **Map Tab:**
+        * Visualizes settlement locations (`tk.Canvas`).
+        * Displays settlement name, ID, and current wealth.
+        * Scales settlement circle size based on wealth (logarithmic scaling, configurable).
+        * Colors settlements differently if they meet the "city" population threshold.
+        * Shows recent trade routes with flashing lines and marker dots indicating direction.
+        * Displays details of the last trade (participants, good, quantity, prices, profit) below the map.
+    * Real-time updates driven by configurable simulation ticks (`tick_delay_ms`).
 
 ## Running the Simulation
 
@@ -36,18 +52,21 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     ```bash
     pip install sv_ttk
     ```
-5.  Run the UI:
+5.  Ensure `config.json` and `recipes.json` are present in the same directory as the Python scripts. Modify these files to tune parameters, goods, or recipes.
+6.  Run the UI:
     ```bash
     python trade_ui.py
     ```
 
-## Future Plans
+## Known Issues / Future Plans
 
-* Implement population growth mechanics.
-* Allow storage capacity to increase (e.g., through investment).
-* Add more complex trade logic (e.g., transportation costs, trader agents, multi-stop routes).
-* Introduce more specific producer/consumer entities (Farms, Mines, Workshops, Households) to replace settlement-level abstractions.
-* Refine resource chains and add more goods/recipes.
+* **Economic Balancing:** The simulation can still stagnate or lead to wealth depletion, especially with storage costs. Further tuning of production costs, consumption rates, upkeep costs, and potentially adding wealth generation mechanisms (e.g., taxes, trade tariffs, resource extraction value) is needed.
+* **Negative Wealth:** Need to implement logic for what happens when a settlement's wealth drops significantly below zero (e.g., production stops, population decline, abandonment).
+* **Settlement Placement:** While improved, the random placement might still result in some suboptimal spacing or clustering.
+* Implement population growth/decline mechanics.
+* Add more complex trade logic (e.g., transportation costs, dedicated trader agents, multi-stop routes).
+* Introduce more specific producer/consumer entities (Farms, Mines, Workshops, Households).
+* Refine resource chains and add more intermediate/luxury goods.
 * Potential integration with geographical map data.
 
 ## Technologies
@@ -55,4 +74,3 @@ The initial concept originated from [link to your Obsidian note or brief descrip
 * Python 3
 * Tkinter (via `ttk` and `sv_ttk`) for the UI
 * JSON for configuration
-
