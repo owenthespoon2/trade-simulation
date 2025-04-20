@@ -1,38 +1,44 @@
 {
-    "wood": {
-      "inputs": {},
-      "outputs": {"wood": 1.0},
-      "labor": 3,
-      "required_terrain": ["Forest", "Hills"],
-      "wealth_cost": 0
-    },
-    "iron_ore": {
-      "inputs": {},
-      "outputs": {"iron_ore": 0.5},
-      "labor": 5,
-      "required_terrain": ["Mountain", "Hills"],
-      "wealth_cost": 0
-    },
-    "seed": {
-      "inputs": {},
-      "outputs": {"seed": 0.5},
-      "labor": 2,
-      "required_terrain": ["Grassland", "Hills"],
-      "wealth_cost": 0
-    },
-    "grain": {
-      "inputs": {"seed": 0.1},
-      "outputs": {"grain": 1.0},
-      "labor": 5,
-      "required_terrain": ["Grassland", "Plains"],
-      "wealth_cost": 0
-    },
-    "tools": {
-      "inputs": {"iron_ore": 2.0, "wood": 0.5},
-      "outputs": {"tools": 1.0},
-      "labor": 10,
-      "required_terrain": null,
-      "wealth_cost": 2
-    }
+  "wood": {
+    "inputs": {},
+    "outputs": {"wood": 1.0},
+    "labor": 3,
+    "required_terrain": ["Forest", "Hills"],
+    "wealth_cost": 0
+  },
+  "iron_ore": {
+    "inputs": {},
+    "outputs": {"iron_ore": 0.5},
+    "labor": 5,
+    "required_terrain": ["Mountain", "Hills"],
+    "wealth_cost": 0
+  },
+  "seed": {
+    "inputs": {},
+    "outputs": {"seed": 0.5},
+    "labor": 2,
+    "required_terrain": ["Grassland", "Hills"],
+    "wealth_cost": 0
+  },
+  "grain": {
+    "inputs": {"seed": 0.1},
+    "outputs": {"grain": 1.0},
+    "labor": 5,
+    "required_terrain": ["Grassland", "Plains"],
+    "wealth_cost": 0
+  },
+  "tools": {
+    "inputs": {"iron_ore": 2.0, "wood": 0.5},
+    "outputs": {"tools": 1.0},
+    "labor": 10,
+    "required_terrain": null,
+    "wealth_cost": 2
+  },
+  "bread": { 
+    "inputs": {"grain": 1.0}, 
+    "outputs": {"bread": 2.0}, 
+    "labor": 1, 
+    "required_terrain": null, 
+    "wealth_cost": 0
   }
-  
+}
