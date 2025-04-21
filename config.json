@@ -2,7 +2,7 @@
   "simulation_parameters": {
     "price_sensitivity": 2.0,
     "storage_capacity_per_pop": 10.0,
-    "max_trades_per_tick": 200, 
+    "max_trades_per_tick": 200,
     "labor_per_pop": 0.5,
     "trade_profit_margin_threshold": 1.05,
     "settlement_default_initial_wealth": 500,
@@ -13,23 +13,23 @@
     "city_population_threshold": 200,
     "city_storage_multiplier": 1.5,
     "storage_cost_per_unit": 0.01,
-    "production_wealth_buffer": 10.0,      
-    "abandonment_wealth_threshold": -100, 
-    "abandonment_ticks_threshold": 15,   
-    "migration_check_interval": 5,       
-    "migration_wealth_threshold": 0,       
-    "migration_target_min_wealth": 600,  
-    "migration_max_percentage": 0.1       
+    "production_wealth_buffer": 10.0,
+    "abandonment_wealth_threshold": -100,
+    "abandonment_ticks_threshold": 15,
+    "migration_check_interval": 5,
+    "migration_wealth_threshold": 0,
+    "migration_target_min_wealth": 600,
+    "migration_max_percentage": 0.1
   },
   "ui_parameters": {
-    "tick_delay_ms": 2000, 
+    "tick_delay_ms": 100,
     "trade_effect_duration_ms": 1200,
     "settlement_radius": 15,
     "trade_marker_radius": 4,
-    "window_title": "Emergent Trade Simulation (v3)", 
-    "settlement_base_radius": 2,          
-    "settlement_wealth_sqrt_scale": 0.5,  
-    "settlement_max_radius_increase": 50, 
+    "window_title": "Emergent Trade Simulation (v3)",
+    "settlement_base_radius": 2,
+    "settlement_wealth_sqrt_scale": 0.5,
+    "settlement_max_radius_increase": 50,
     "city_color": "#e27a7a"
   },
   "goods_definitions": {
@@ -38,7 +38,6 @@
     "seed": { "name": "Seed", "base_value": 2.0, "is_bulk": true, "is_producible": true },
     "grain": { "name": "Grain", "base_value": 8.0, "is_bulk": true, "is_producible": true },
     "tools": { "name": "Tools", "base_value": 50.0, "is_bulk": false, "is_producible": true },
-    "textiles": { "name": "Textiles", "base_value": 70.0, "is_bulk": false, "is_producible": false },
     "bread": { "name": "Bread", "base_value": 12.0, "is_bulk": true, "is_producible": true }
   }
 }

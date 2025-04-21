@@ -6,79 +6,84 @@ This project aims to prototype a data-driven simulation where a complex, large-s
 
 The initial concept originated from [link to your Obsidian note or brief description if not linkable]. The goal is to create a modular system suitable for potential future integration with broader ecosystem or civilization simulations, eventually featuring more detailed settlements and specialized AI agents.
 
-## Current Status (April 2025 - Post Phase 0.5)
+## Current Status (April 2025 - Post Phase 1.8.6)
 
 * **Configuration:**
-    * Core simulation parameters (price sensitivity, consumption rates, trade limits, population thresholds, upkeep costs, migration rules, etc.) externalized to `config.json`.
-    * UI display parameters (tick delays, colors, sizes) externalized to `config.json`.
-    * Goods definitions (name, base value, properties) externalized to `config.json`.
+    * Core simulation parameters externalized to `config.json`.
+    * UI display parameters externalized to `config.json`.
+    * Goods definitions externalized to `config.json` (Textiles removed).
     * Production recipes remain externalized in `recipes.json`.
 * **Core Logic (`trade_logic.py`):**
-    * Settlements represented with population, terrain, wealth, dynamic storage capacity (larger for cities), labor pools, and now **3D coordinates (x, y, z)**.
-    * Goods loaded from config, supporting bulk/item tracking (`ItemInstance` for non-bulk provenance).
-    * Recipe-based production system loaded from `recipes.json`, including basic wealth buffer check to halt production when funds are low.
-    * Population-driven consumption, with city-specific needs (e.g., bread).
-    * Dynamic local price calculation based on supply/demand ratio.
-    * Trade execution based on price differentials (currently limited trade quantity per transaction).
-    * Storage upkeep costs deducted from wealth each tick.
-    * Settlement abandonment logic based on sustained low wealth.
-    * **Population migration** logic based on wealth differentials and 3D distance.
-    * Improved commenting and code structure (file index added).
+    * Settlements with population, terrain, wealth, dynamic storage, labor pools, 3D coordinates.
+    * Goods loaded from config, supporting bulk/item tracking.
+    * Recipe-based production with wealth buffer check and per-tick production tracking (`production_this_tick`).
+    * Population-driven consumption.
+    * Dynamic local price calculation.
+    * **Bulk trade execution** based on price differentials, affordability, and storage space.
+    * Storage upkeep costs.
+    * Settlement abandonment logic.
+    * Population migration logic based on wealth and 3D distance, with per-tick tracking.
+    * Global good total calculation method (`get_global_good_totals`).
+    * Improved commenting and code structure.
 * **World Setup (`world_setup.py`):**
     * Dynamically creates goods from config.
-    * Sets up initial settlements with specified parameters, including initial wealth, stock, and **Z coordinates**.
-    * Improved commenting and code structure (file index added).
-* **User Interface (`trade_ui.py`):**
+    * Sets up initial settlements with specified parameters (incl. Z coordinates).
+    * Improved commenting and code structure.
+* **User Interface (Refactored into Modules):**
+    * Main application logic in `ui_main.py`.
+    * UI components organized into `ui_static_pane.py`, `ui_dynamic_pane.py`, `ui_map_pane.py`, `ui_analysis_window.py`.
     * Fullscreen Tkinter UI with dark mode (`sv_ttk` optional).
-    * Tabbed Interface: Separates detailed tables from the map visualization.
-    * **Tables Tab:** Displays static setup data (Settlements, Goods, Recipes) and dynamic simulation state (Settlement wealth, storage, prices, labor) in sortable tables, plus a log of recent trade events.
-    * **Map Tab:** Visualizes settlement locations (2D projection of X,Y), name, ID, and wealth. Scales settlement circle size based on wealth. Colors settlements differently if they meet the "city" population threshold. Shows recent trade routes with flashing lines/markers. Displays details of the last trade.
-    * **Trade Analysis Window:** Provides detailed views of:
-        * Executed Trades (this tick)
-        * Failed Trade Executions (this tick)
-        * Viable Potential Trades (this tick)
-        * **Migration Events (this tick)** - New!
-    * Improved commenting and code structure (file index added).
+    * **Static Pane:** Displays Settlements list (updates pop.), Goods list, Recipe details, **Global Goods Totals**.
+    * **Settlement Details Tab:** Redesigned with a **scrollable area** containing individual sections per settlement. Each section shows basic stats, **Inventory** (Treeview), and **Production This Tick** (Treeview). Uses an **optimized update strategy** (persisting widgets) to prevent lag/flashing. Minor layout shift fixed.
+    * **Map Tab:** Visualizes settlement locations (2D projection), name, ID, wealth (scaled size), city status (color). Shows recent trade routes. Displays last trade details.
+    * **Trade Analysis Window:** Pop-up window with tabs for Executed, Failed, Potential trades, and Migration events. Update logic **optimized** to only run when the window is visible.
+    * Simulation now starts correctly in a **paused state**.
 
 ## Running the Simulation
 
 1.  Ensure Python 3 is installed.
-2.  Clone the repository.
-3.  (Optional but recommended) Create and activate a virtual environment:
+2.  Clone the repository / ensure all `.py`, `.json` files are present.
+3.  (Optional but recommended) Create and activate a virtual environment.
+4.  Install dependencies: `pip install sv_ttk`
+5.  Modify `config.json` / `recipes.json` as needed.
+6.  Run the main UI script:
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # Linux/macOS
-    # venv\Scripts\activate  # Windows
-    ```
-4.  Install dependencies:
-    ```bash
-    pip install sv_ttk
-    ```
-5.  Ensure `config.json` and `recipes.json` are present in the same directory as the Python scripts. Modify these files to tune parameters, goods, or recipes.
-6.  Run the UI:
-    ```bash
-    python trade_ui.py
+    python ui_main.py
     ```
 
 ## Development Plan & Future Goals
 
 We are following a phased development approach:
 
-* **Phase 0:** Confirm existing mechanics (Abandonment, Migration, Production Halt) - *Completed.*
-* **Phase 0.5:** Implement 3D Coordinates & Migration Tracking UI - *Completed.*
-* **Phase 1 (Next):** Implement Bulk Trading Logic & Add Code Comments.
-* **Phase 2:** Evaluate Trade Volume & Potentially Implement Market Buildings.
-* **Phase 3:** Evaluate Storage Limits & Potentially Implement Storehouse Buildings.
+* **Phase 0 - 1.8.6:** Initial setup, core logic implementation, UI creation, bulk trades, UI enhancements (3D coords, migration/production/global stats), refactoring, and performance optimizations - *Completed.*
 
-**Longer-Term Vision / Future Plans:**
+* **Phase 2: Core Economic Tuning & Trade Realism** (Focus: Make the current simulation more robust and believable)
+    * **2.1:** Evaluate Trade Volume -> Implement **Market Buildings** (Dynamic trade capacity per settlement) *if observation indicates this is a bottleneck*.
+    * **2.2:** Implement **Transport Costs** based on distance/trade value. (Medium Complexity)
+    * **2.3:** Economic Balancing I (Review pricing floors/ceilings, production costs vs. sale prices, address specific issues like the seed oversupply. Consider simple **Goods Decay** for food items). (Medium Complexity)
 
-* **Economic Balancing:** Continue tuning parameters (production costs, consumption, upkeep, trade logic) to achieve more stable and interesting economic behaviour. Address potential stagnation or runaway wealth/poverty.
-* **Agent-Based Model:** Transition from settlement-level logic to individual agents (Traders, Miners, Farmers, etc.) with specific roles, inventories, needs, and behaviours operating within settlements.
-* **Detailed Settlement Composition:** Model settlements as collections of functional buildings (Houses, Workshops, Mines, Markets, Town Halls) instead of monolithic entities. Agents would interact with these buildings.
-* **Advanced Trade Logic:** Implement features like transportation costs (based on distance/terrain), dedicated trader agents, multi-stop routes, and potentially trade agreements.
-* **Population Dynamics:** Add mechanics for population growth/decline based on factors like food availability, wealth, housing.
-* **Enhanced Map Visualization:** Move beyond the basic canvas to a more sophisticated map rendering system, potentially capable of showing terrain, settlement details, and agent movements.
-* **Resource Chain Refinement:** Add more intermediate and complex goods (e.g., metal -> tools, grain -> flour -> bread).
+* **Phase 3: Storage, Wealth & Analysis**
+    * **3.1:** Evaluate Storage Limits -> Implement **Storehouse Buildings** (Dynamic storage capacity) *if observation indicates this is a bottleneck*.
+    * **3.2:** Implement **Detailed Data Export** feature (Button to save settlement history to JSON). (Medium Complexity, High RAM potential)
+    * **3.3:** Economic Balancing II (Refine based on previous changes).
+    * **3.4:** Handle **Negative Wealth** more gracefully (e.g., halt production/trade, faster abandonment). (Medium Complexity)
+
+* **Phase 4: UI/UX Overhaul**
+    * **4.1:** Implement **Improved Map Visuals** (Top-down view, better settlement representation [e.g., squares], region/civ display, click-info, alternative trade visualization [e.g., moving dots]). (High Complexity UI work)
+    * *(UI Code Refactoring into modules completed in Phase 1.8.5)*
+
+* **Phase 5: Towards Agent-Based Simulation** (Focus: Starting the shift from settlement-level to agent-level)
+    * **5.1:** Population Dynamics (Implement simple growth/decline mechanics). (Medium Complexity)
+    * **5.2:** Introduce simple specialized **Agent types** (e.g., basic workers vs. traders affecting efficiency). (Medium-High Complexity)
+    * **5.3:** Consider **Universal Needs** (e.g., Universal Bread Consumption) and impact on balance. (Medium Complexity - High Rebalancing Effort)
+
+* **Phase 6+ ("V2.0" / Long Term):**
+    * Full **Entity System** (Model individual Farms, Workshops, Houses within settlements). (Very High Complexity)
+    * Full **Agent-Based Model** (Agents with needs, inventories, tasks, schedules, AI decision-making). (Very High Complexity)
+    * **Wealth as Coin** (Physical currency simulation). (High Complexity Refactor)
+    * **Loans/Banks** system. (High Complexity)
+    * **Long-Term Deals** / Contracts. (Medium-High Complexity)
+    * Advanced Resource Chains, Luxury Goods, etc.
 
 ## Technologies
 
