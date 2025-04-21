@@ -48,14 +48,26 @@ def update_map_pane(app):
     if trades_this_tick:
         for trade_info in trades_this_tick:
             _draw_trade_route(app, trade_info)
-            last_trade_details = trade_info
+            last_trade_details = trade_info # Keep track of the very last one for display
     else:
+        # Clear labels if no trades happened
         if hasattr(app, 'last_trade_info_var'): app.last_trade_info_var.set("No trades this tick.")
         if hasattr(app, 'last_trade_reason_var'): app.last_trade_reason_var.set("")
 
+    # Update info labels based on the last trade (if any)
     if last_trade_details:
-        info = (f"Trade: {last_trade_details['quantity']:.1f} {last_trade_details['good_name']} " f"from {last_trade_details['seller_name']} to {last_trade_details['buyer_name']}")
-        reason = (f"Reason: Sell P={last_trade_details['seller_price']:.2f}, " f"Buy P={last_trade_details['buyer_price']:.2f} " f"(Profit/U={last_trade_details['profit_per_unit']:.2f})")
+        # Calculate goods cost and transport cost for the label
+        goods_cost = last_trade_details['quantity'] * last_trade_details['seller_price']
+        transport_cost = last_trade_details.get('transport_cost_total', 0.0) # Use .get() for safety
+
+        info = (f"Trade: {last_trade_details['quantity']:.1f} {last_trade_details['good_name']} "
+                f"from {last_trade_details['seller_name']} to {last_trade_details['buyer_name']}")
+        # FIX: Use the correct key 'potential_profit_per_unit'
+        reason = (f"Reason: Sell P={last_trade_details['seller_price']:.2f}, "
+                  f"Buy P={last_trade_details['buyer_price']:.2f} "
+                  f"(Pot Profit/U={last_trade_details.get('potential_profit_per_unit', 0.0):.2f}, " # Use .get()
+                  f"Goods Cost: {goods_cost:.2f}, TCost: {transport_cost:.2f})")
+
         if hasattr(app, 'last_trade_info_var'): app.last_trade_info_var.set(info)
         if hasattr(app, 'last_trade_reason_var'): app.last_trade_reason_var.set(reason)
 
@@ -121,7 +133,7 @@ def _create_single_settlement_item(app, settlement):
     text_id = app.map_canvas.create_text(x, y + r + 8, text=f"{settlement.name} ({settlement.id})", fill=app.DARK_FG, font=app.settlement_font, anchor=tk.CENTER, tags=("settlement", f"settlement_{settlement.id}")) # Use app.DARK_FG
     wealth_id = app.map_canvas.create_text(x, y - r - 8, text=f"W: {settlement.wealth:.0f}", fill=app.WEALTH_TEXT_COLOR, font=app.wealth_font, anchor=tk.CENTER, tags=("settlement", "wealth_text", f"settlement_{settlement.id}")) # Use app.WEALTH_TEXT_COLOR
     app.settlement_canvas_items[settlement.id] = {'circle': circle_id, 'text': text_id, 'wealth': wealth_id}
-    _update_settlement_visuals(app)
+    _update_settlement_visuals(app) # Call update to ensure radius/color is correct
 
 def _draw_trade_route(app, trade_info):
     """Draws a temporary line and marker on the map."""
@@ -143,8 +155,10 @@ def _draw_trade_route(app, trade_info):
     app.root.after(TRADE_EFFECT_DURATION_MS, lambda lid=line_id: _delete_canvas_item(app, lid))
 
     marker_r = TRADE_MARKER_RADIUS; dx = x1 - x2; dy = y1 - y2; dist = max(1, (dx**2 + dy**2)**0.5)
+    # Safely get buyer settlement and calculate radius
     buyer_settlement = app.world.settlements.get(buyer_id); current_buyer_radius = app.SETTLEMENT_BASE_RADIUS
     if buyer_settlement: current_buyer_radius = _calculate_settlement_radius(app, buyer_settlement.wealth)
+
     offset_scale = current_buyer_radius + marker_r + 2; marker_x = x2 + (dx / dist) * offset_scale; marker_y = y2 + (dy / dist) * offset_scale
     marker_id = app.map_canvas.create_oval(marker_x - marker_r, marker_y - marker_r, marker_x + marker_r, marker_y + marker_r, fill=TRADE_MARKER_COLOR, outline="", tags=("trade_marker", trade_tag))
     app.root.after(TRADE_EFFECT_DURATION_MS, lambda mid=marker_id: _delete_canvas_item(app, mid))
@@ -154,11 +168,11 @@ def _set_item_color(app, item_id, color):
     try:
         if hasattr(app, 'map_canvas') and app.map_canvas.winfo_exists() and app.map_canvas.find_withtag(item_id):
             app.map_canvas.itemconfig(item_id, fill=color)
-    except tk.TclError: pass
+    except tk.TclError: pass # Ignore errors if item deleted before color change
 def _delete_canvas_item(app, item_id):
     """Safely deletes a canvas item."""
     try:
         if hasattr(app, 'map_canvas') and app.map_canvas.winfo_exists() and app.map_canvas.find_withtag(item_id):
             app.map_canvas.delete(item_id)
-    except tk.TclError: pass
+    except tk.TclError: pass # Ignore errors if item already deleted
 

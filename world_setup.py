@@ -8,14 +8,14 @@ import random
 # ==============================================================================
 # - Imports                               : Line 5
 # - setup_world Function                  : Line 16
-#   - Load Configuration                  : Line 20
-#   - Initialize World                    : Line 48
-#   - Define Goods (from Config)          : Line 52
-#   - Load Recipes                        : Line 73
-#   - Define Settlements                  : Line 91 (Pop & Wealth Standardized)
-#   - Add Initial Stock                   : Line 143
-#   - Define Regions & Civilizations      : Line 159
-# - Test Block (`if __name__ == "__main__"`) : Line 176
+#   - Load Configuration                  : Line 20 (Loads sim_params, goods_defs, building_defs)
+#   - Initialize World                    : Line 51 (Passes sim_params, building_defs)
+#   - Define Goods (from Config)          : Line 55
+#   - Load Recipes                        : Line 76
+#   - Define Settlements                  : Line 96 (Passes sim_params, building_defs to constructor)
+#   - Add Initial Stock                   : Line 153
+#   - Define Regions & Civilizations      : Line 169
+# - Test Block (`if __name__ == "__main__"`) : Line 186
 # ==============================================================================
 
 
@@ -32,9 +32,9 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
     """
     Creates and initializes the simulation world state.
 
-    Loads simulation parameters, goods definitions, and recipes from JSON files,
-    creates initial settlements, regions, and civilizations, and adds initial
-    stock to settlements.
+    Loads simulation parameters, goods definitions, building definitions, and recipes
+    from JSON files, creates initial settlements, regions, and civilizations,
+    and adds initial stock to settlements.
 
     Args:
         config_file (str): Path to the main configuration JSON file.
@@ -49,23 +49,32 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
 
     # --- Load Configuration ---
     print(f"Attempting to load configuration from: {config_file}")
+    sim_params = {}
+    goods_defs = {}
+    building_defs = {} # NEW: Load building definitions
     try:
         with open(config_file, 'r') as f: config_data = json.load(f)
         sim_params = config_data.get("simulation_parameters", {})
         goods_defs = config_data.get("goods_definitions", {})
+        building_defs = config_data.get("building_definitions", {}) # NEW: Load building definitions
         print(f"Successfully loaded configuration from {config_file}")
     except FileNotFoundError:
         print(f"ERROR: Config file '{config_file}' not found. Using default parameters.")
-        sim_params = { "price_sensitivity": 2.0, "storage_capacity_per_pop": 10.0, "max_trades_per_tick": 200, "labor_per_pop": 0.5, "trade_profit_margin_threshold": 1.05, "settlement_default_initial_wealth": 500, "base_consumption_rate": 0.1, "max_production_passes": 5, "min_price_multiplier": 0.1, "max_price_multiplier": 10.0, "city_population_threshold": 150, "city_storage_multiplier": 1.5, "storage_cost_per_unit": 0.01, "production_wealth_buffer": 10.0, "abandonment_wealth_threshold": -100, "abandonment_ticks_threshold": 15, "migration_check_interval": 5, "migration_wealth_threshold": 0, "migration_target_min_wealth": 600, "migration_max_percentage": 0.1 }
-        goods_defs = {}
+        # Define default sim_params if file not found (consider if this is desired behavior)
+        sim_params = { "price_sensitivity": 2.0, "storage_capacity_per_pop": 10.0, "max_trades_per_tick": 200, "labor_per_pop": 0.5, "trade_profit_margin_threshold": 1.05, "settlement_default_initial_wealth": 500, "base_consumption_rate": 0.1, "max_production_passes": 5, "min_price_multiplier": 0.1, "max_price_multiplier": 10.0, "city_population_threshold": 150, "city_storage_multiplier": 1.5, "storage_cost_per_unit": 0.01, "production_wealth_buffer": 10.0, "abandonment_wealth_threshold": -100, "abandonment_ticks_threshold": 15, "migration_check_interval": 5, "migration_wealth_threshold": 0, "migration_target_min_wealth": 600, "migration_max_percentage": 0.1, "base_trade_capacity": 5, "market_upgrade_fail_trigger": 5, "min_trade_qty": 0.01, "settlement_log_max_length": 10, "world_trade_log_max_length": 10 }
+        goods_defs = {} # No default goods
+        building_defs = {} # No default buildings
     except json.JSONDecodeError: print(f"ERROR: Could not decode JSON from '{config_file}'. Check file format. Exiting."); sys.exit(1)
     except Exception as e: print(f"ERROR: An unexpected error occurred loading config: {e}. Exiting."); sys.exit(1)
 
     if not goods_defs: print("ERROR: No goods definitions found in config file or defaults. Cannot setup world."); sys.exit(1)
+    if not sim_params: print("ERROR: No simulation parameters found in config file or defaults. Cannot setup world."); sys.exit(1)
+    # It's okay if building_defs is empty initially
 
-    # --- Initialize World with Simulation Parameters ---
+    # --- Initialize World with Simulation Parameters and Building Definitions ---
     print("Initializing World object...")
-    world = World(sim_params)
+    # NEW: Pass sim_params and building_defs to World constructor
+    world = World(sim_params=sim_params, building_defs=building_defs)
 
     # --- Define Goods Dynamically from Config ---
     print("Loading goods definitions...")
@@ -96,11 +105,8 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
 
     # --- Define Settlements ---
     print("Defining initial settlements...")
-    storage_per_pop = sim_params.get('storage_capacity_per_pop', 10.0)
-    labor_per_pop = sim_params.get('labor_per_pop', 0.5)
+    # Get parameters needed for Settlement initialization from sim_params
     default_wealth = sim_params.get('settlement_default_initial_wealth', 500)
-    city_pop_threshold = sim_params.get('city_population_threshold', 150)
-    city_storage_mult = sim_params.get('city_storage_multiplier', 1.5)
 
     # Standardized starting population and wealth for testing
     standard_start_pop = 100
@@ -109,41 +115,35 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
 
     settlements_to_add = []
     # FUTURE: This section will need significant changes to define initial internal buildings and agent populations.
+    # NEW: Pass sim_params and building_defs to the Settlement constructor
     settlements_to_add.append(Settlement(
         id='A', name='Farmstead', region_id='R1', population=standard_start_pop, terrain_type='Grassland',
-        storage_capacity_per_pop=storage_per_pop, labor_per_pop=labor_per_pop,
-        default_initial_wealth=standard_start_wealth, # Use standard wealth
-        city_population_threshold=city_pop_threshold, city_storage_multiplier=city_storage_mult,
+        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
+        initial_wealth=standard_start_wealth, # Use standard wealth
         x=100, y=100, z=0
     ))
     settlements_to_add.append(Settlement(
         id='B', name='Logger\'s Camp', region_id='R1', population=standard_start_pop, terrain_type='Forest',
-        storage_capacity_per_pop=storage_per_pop, labor_per_pop=labor_per_pop,
-        default_initial_wealth=standard_start_wealth, # Use standard wealth
-        city_population_threshold=city_pop_threshold, city_storage_multiplier=city_storage_mult,
+        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
+        initial_wealth=standard_start_wealth, # Use standard wealth
         x=100, y=300, z=5
     ))
     settlements_to_add.append(Settlement(
         id='C', name='Mine Town', region_id='R2', population=standard_start_pop, terrain_type='Mountain',
-        storage_capacity_per_pop=storage_per_pop, labor_per_pop=labor_per_pop,
-        default_initial_wealth=standard_start_wealth, # Use standard wealth
-        city_population_threshold=city_pop_threshold, city_storage_multiplier=city_storage_mult,
+        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
+        initial_wealth=standard_start_wealth, # Use standard wealth
         x=400, y=100, z=20
     ))
     settlements_to_add.append(Settlement(
         id='D', name='Craftburg', region_id='R2', population=standard_start_pop, terrain_type='Hills',
-        storage_capacity_per_pop=storage_per_pop, labor_per_pop=labor_per_pop,
-        default_initial_wealth=standard_start_wealth, # Use standard wealth
-        # initial_wealth=1000, # Removed specific higher wealth
-        city_population_threshold=city_pop_threshold, city_storage_multiplier=city_storage_mult,
+        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
+        initial_wealth=standard_start_wealth, # Use standard wealth
         x=400, y=300, z=10
     ))
     settlements_to_add.append(Settlement(
         id='E', name='Metropolis', region_id='R2', population=standard_start_pop, terrain_type='Plains',
-        storage_capacity_per_pop=storage_per_pop, labor_per_pop=labor_per_pop,
-        default_initial_wealth=standard_start_wealth, # Use standard wealth
-        # initial_wealth=1500, # Removed specific higher wealth
-        city_population_threshold=city_pop_threshold, city_storage_multiplier=city_storage_mult,
+        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
+        initial_wealth=standard_start_wealth, # Use standard wealth
         x=250, y=200, z=0
     ))
 
@@ -187,11 +187,10 @@ if __name__ == "__main__":
         print("-" * 20); print("Goods defined:")
         for good in test_world.goods.values(): print(f"  - {good} (Producible: {good.is_producible}, Recipe: {'Yes' if good.recipe else 'No'})")
         print("-" * 20); print("Settlements created:")
-        for settlement in test_world.get_all_settlements(): print(f"  - {settlement} (Storage Cap: {settlement.storage_capacity:.0f}, Labor Pool: {settlement.max_labor_pool:.1f})")
+        for settlement in test_world.get_all_settlements(): print(f"  - {settlement} (Storage Cap: {settlement.storage_capacity:.0f}, Labor Pool: {settlement.max_labor_pool:.1f}, Market Lvl: {settlement.market_level}, Trade Cap: {settlement.trade_capacity})") # Added market info
         print("-" * 20); print("Regions created:")
         for region in test_world.regions.values(): print(f"  - {region.name} (Settlements: {[s.name for s in region.settlements]})")
         print("-" * 20); print("Setup test complete."); print("="*30)
     except Exception as e:
         print(f"\n--- ERROR DURING WORLD SETUP TEST ---"); print(e)
         import traceback; traceback.print_exc(); print("-" * 35)
-

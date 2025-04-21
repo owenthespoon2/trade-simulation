@@ -50,6 +50,7 @@ def update_dynamic_pane(app):
         print("WARN: Scrollable frame not ready for dynamic update.")
         return
 
+    # Use the updated settlements list from the app instance
     current_settlement_ids = set(s.id for s in app.settlements)
     existing_widget_ids = set(app.settlement_widgets.keys())
 
@@ -67,6 +68,7 @@ def update_dynamic_pane(app):
 
     # --- Add/Update Widgets for Current Settlements ---
     row_index = 0
+    # Use the updated settlements list from the app instance
     for settlement in app.settlements:
         settlement_id = settlement.id
 
@@ -119,7 +121,7 @@ def _create_settlement_detail_widgets(parent_frame, settlement, app):
     frame.columnconfigure(2, weight=1, minsize=150) # Inventory tree
     frame.columnconfigure(3, weight=1, minsize=100) # Production tree
 
-    # Create Labels for basic stats
+    # --- Create Labels for basic stats ---
     widgets['pop_label_title'] = ttk.Label(frame, text="Population:")
     widgets['pop_label_value'] = ttk.Label(frame, text="0", width=6, anchor="e") # Fixed width
     widgets['wealth_label_title'] = ttk.Label(frame, text="Wealth:")
@@ -129,29 +131,47 @@ def _create_settlement_detail_widgets(parent_frame, settlement, app):
     widgets['storage_label_title'] = ttk.Label(frame, text="Storage:")
     widgets['storage_label_value'] = ttk.Label(frame, text="0.0 / 0.0", width=12, anchor="e") # Fixed width
 
-    # Grid Labels
-    widgets['pop_label_title'].grid(row=0, column=0, sticky="w")
-    widgets['pop_label_value'].grid(row=0, column=1, sticky="e", padx=(0,5)) # Align right, add padding
-    widgets['wealth_label_title'].grid(row=1, column=0, sticky="w")
-    widgets['wealth_label_value'].grid(row=1, column=1, sticky="e", padx=(0,5))
-    widgets['labor_label_title'].grid(row=2, column=0, sticky="w")
-    widgets['labor_label_value'].grid(row=2, column=1, sticky="e", padx=(0,5))
-    widgets['storage_label_title'].grid(row=3, column=0, sticky="w")
-    widgets['storage_label_value'].grid(row=3, column=1, sticky="e", padx=(0,5))
+    # --- NEW: Market Level and Trade Capacity Labels ---
+    widgets['market_level_title'] = ttk.Label(frame, text="Market Lvl:")
+    widgets['market_level_value'] = ttk.Label(frame, text="1", width=6, anchor="e") # Fixed width
+    widgets['trade_capacity_title'] = ttk.Label(frame, text="Trades:")
+    widgets['trade_capacity_value'] = ttk.Label(frame, text="0/0", width=10, anchor="e") # Fixed width
 
-    # Create Inventory Treeview
+    # --- Grid Labels ---
+    row_offset = 0 # Start placing labels at row 0
+    widgets['pop_label_title'].grid(row=row_offset, column=0, sticky="w")
+    widgets['pop_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5)) # Align right, add padding
+    row_offset += 1
+    widgets['wealth_label_title'].grid(row=row_offset, column=0, sticky="w")
+    widgets['wealth_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
+    row_offset += 1
+    widgets['labor_label_title'].grid(row=row_offset, column=0, sticky="w")
+    widgets['labor_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
+    row_offset += 1
+    widgets['storage_label_title'].grid(row=row_offset, column=0, sticky="w")
+    widgets['storage_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
+    row_offset += 1
+    # --- NEW: Grid Market/Trade Labels ---
+    widgets['market_level_title'].grid(row=row_offset, column=0, sticky="w")
+    widgets['market_level_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
+    row_offset += 1
+    widgets['trade_capacity_title'].grid(row=row_offset, column=0, sticky="w")
+    widgets['trade_capacity_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
+
+    # --- Create Inventory Treeview ---
+    inv_rows = row_offset + 1 # Total rows used by labels
     inv_cols = ["good", "price", "stock"]; inv_names = ["Inventory", "Price", "Stock"]
-    inv_tree = ttk.Treeview(frame, columns=inv_cols, show="headings", height=4) # Fixed height
-    inv_tree.grid(row=0, column=2, rowspan=4, sticky="nsew", padx=(10, 0)) # Padding added
+    inv_tree = ttk.Treeview(frame, columns=inv_cols, show="headings", height=inv_rows) # Adjust height based on labels
+    inv_tree.grid(row=0, column=2, rowspan=inv_rows, sticky="nsew", padx=(10, 0)) # Span all label rows
     inv_tree.heading("good", text=inv_names[0]); inv_tree.column("good", width=70, anchor=tk.W, stretch=tk.NO)
     inv_tree.heading("price", text=inv_names[1]); inv_tree.column("price", width=40, anchor=tk.E, stretch=tk.NO)
     inv_tree.heading("stock", text=inv_names[2]); inv_tree.column("stock", width=40, anchor=tk.E, stretch=tk.NO)
     widgets['inv_tree'] = inv_tree
 
-    # Create Production Treeview
+    # --- Create Production Treeview ---
     prod_cols = ["good", "produced"]; prod_names = ["Produced", "Qty"]
-    prod_tree = ttk.Treeview(frame, columns=prod_cols, show="headings", height=4) # Fixed height
-    prod_tree.grid(row=0, column=3, rowspan=4, sticky="nsew", padx=(5, 0))
+    prod_tree = ttk.Treeview(frame, columns=prod_cols, show="headings", height=inv_rows) # Adjust height
+    prod_tree.grid(row=0, column=3, rowspan=inv_rows, sticky="nsew", padx=(5, 0)) # Span all label rows
     prod_tree.heading("good", text=prod_names[0]); prod_tree.column("good", width=70, anchor=tk.W, stretch=tk.NO)
     prod_tree.heading("produced", text=prod_names[1]); prod_tree.column("produced", width=40, anchor=tk.E, stretch=tk.NO)
     widgets['prod_tree'] = prod_tree
@@ -178,6 +198,10 @@ def _update_settlement_detail_widgets(settlement, widgets, app):
     widgets['labor_label_value'].config(text=f"{settlement.current_labor_pool:.1f}/{settlement.max_labor_pool:.1f}")
     storage_load = settlement.get_current_storage_load(); storage_cap = settlement.storage_capacity
     widgets['storage_label_value'].config(text=f"{storage_load:.1f}/{storage_cap:.0f}")
+
+    # --- NEW: Update Market Level and Trade Capacity ---
+    widgets['market_level_value'].config(text=f"{settlement.market_level}")
+    widgets['trade_capacity_value'].config(text=f"{settlement.trades_executed_this_tick}/{settlement.trade_capacity}")
 
     # Update Inventory Treeview
     inv_tree = widgets['inv_tree']
@@ -232,4 +256,3 @@ def _on_mousewheel(event, app):
         elif event.num == 4 or event.delta > 0: # Scroll up
             app.scrollable_canvas.yview_scroll(-1, "units")
 # --- End Scrollable Frame Helpers ---
-

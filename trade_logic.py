@@ -7,30 +7,30 @@ from collections import defaultdict, OrderedDict
 import json
 
 # ==============================================================================
-# FILE INDEX
+# FILE INDEX (Updated for Wealth Preservation)
 # ==============================================================================
-# - Data Structures (Good, ItemInstance) : Line 20
-# - Settlement Class                      : Line 60
-#   - __init__                            : Line 63
-#   - _update_trade_capacity              : Line 115
-#   - update_derived_stats                : Line 128
-#   - add_log                             : Line 147 (Uses config param)
-#   - Storage Management (add/remove/get) : Line 152
-#   - decide_upgrade                      : Line 198 (Uses config param)
-#   - progress_upgrade                    : Line 225
-#   - produce                             : Line 253
-#   - consume                             : Line 325
-#   - update_prices                       : Line 345
-# - Region Class                          : Line 373
-# - Civilization Class                    : Line 379
-# - World Class                           : Line 385
-#   - __init__                            : Line 387
-#   - Entity Management (add/get)         : Line 404
-#   - get_global_good_totals              : Line 412
-#   - find_trade_opportunities            : Line 424 (Uses config param implicitly)
-#   - execute_trades                      : Line 467 (Uses config param, updates log length)
-#   - _calculate_distance                 : Line 576
-#   - simulation_step                     : Line 581
+# - Data Structures (Good, ItemInstance) : Line 24
+# - Settlement Class                      : Line 64
+#   - __init__                            : Line 67
+#   - _update_trade_capacity              : Line 119
+#   - update_derived_stats                : Line 132
+#   - add_log                             : Line 151 (Uses config param)
+#   - Storage Management (add/remove/get) : Line 156
+#   - decide_upgrade                      : Line 202 (Uses config param)
+#   - progress_upgrade                    : Line 229
+#   - produce                             : Line 257
+#   - consume                             : Line 329
+#   - update_prices                       : Line 349
+# - Region Class                          : Line 377
+# - Civilization Class                    : Line 383
+# - World Class                           : Line 389
+#   - __init__                            : Line 391 (Stores sim_params, building_defs)
+#   - Entity Management (add/get)         : Line 412
+#   - get_global_good_totals              : Line 420
+#   - find_trade_opportunities            : Line 432 (Viability check fixed)
+#   - execute_trades                      : Line 489 (ADDED Max Wealth % Check)
+#   - _calculate_distance                 : Line 634
+#   - simulation_step                     : Line 639
 # ==============================================================================
 
 
@@ -70,7 +70,7 @@ class ItemInstance:
 class Settlement:
     """Represents a settlement, managing population, resources, production, etc."""
     def __init__(self, id, name, region_id, population, terrain_type,
-                 sim_params, building_defs,
+                 sim_params, building_defs, # Now expects sim_params and building_defs
                  initial_wealth=None, x=0, y=0, z=0):
         """Initializes a Settlement."""
         self.id = id; self.name = name; self.region_id = region_id
@@ -391,7 +391,10 @@ class World:
         self.migration_details_this_tick = []
         self.params = sim_params # Store sim parameters
         self.building_defs = building_defs # Store building definitions
-        print(f"World initialized.")
+        # Pre-fetch parameters for efficiency
+        self.transport_cost_per_distance_unit = float(self.params.get('transport_cost_per_distance_unit', 0.0))
+        self.max_trade_cost_wealth_percentage = float(self.params.get('max_trade_cost_wealth_percentage', 1.0)) # Default 100% if missing
+        print(f"World initialized. Transport Cost/Dist: {self.transport_cost_per_distance_unit}, Max Trade % Wealth: {self.max_trade_cost_wealth_percentage:.2f}")
 
     # --- Entity Management ---
     def add_good(self, good): self.goods[good.id] = good
@@ -412,95 +415,185 @@ class World:
 
     # --- Trade Logic ---
     def find_trade_opportunities(self):
-        """Identifies potential trade opportunities based on price differences."""
+        """
+        Identifies potential trade opportunities based on price differences,
+        considering transport costs.
+        """
         self.potential_trades_this_tick.clear(); opportunities_for_execution = []
         active_settlements = [s for s in self.settlements.values() if not s.is_abandoned]
-        price_threshold = self.params.get('trade_profit_margin_threshold', 1.05)
-        min_trade_qty = self.params.get('min_trade_qty', 0.01) # Use config param
+        min_trade_qty = self.params.get('min_trade_qty', 0.01)
+        transport_cost_rate = self.transport_cost_per_distance_unit # Use pre-fetched
 
         for i in range(len(active_settlements)):
             for j in range(i + 1, len(active_settlements)):
                 s_a, s_b = active_settlements[i], active_settlements[j]
+                distance = self._calculate_distance(s_a, s_b)
+
                 for good_id, good in self.goods.items():
                     price_a = s_a.local_prices.get(good_id); price_b = s_b.local_prices.get(good_id)
                     if price_a is None or price_b is None or price_a <= 1e-6 or price_b <= 1e-6: continue
 
-                    profit, seller, buyer, qty_avail = 0, None, None, 0.0; seller_price, buyer_price = 0.0, 0.0
-                    if price_b > price_a * price_threshold: profit = price_b - price_a; seller, buyer = s_a, s_b; seller_price, buyer_price = price_a, price_b; qty_avail = seller.get_total_stored(good_id)
-                    elif price_a > price_b * price_threshold: profit = price_a - price_b; seller, buyer = s_b, s_a; seller_price, buyer_price = price_b, price_a; qty_avail = seller.get_total_stored(good_id)
+                    transport_cost_per_unit = distance * transport_cost_rate
+                    potential_profit, seller, buyer, qty_avail = 0, None, None, 0.0
+                    seller_price, buyer_price = 0.0, 0.0
+
+                    # Check A selling to B
+                    if price_b > price_a + transport_cost_per_unit:
+                        potential_profit = price_b - price_a
+                        seller, buyer = s_a, s_b; seller_price, buyer_price = price_a, price_b
+                        qty_avail = seller.get_total_stored(good_id)
+                    # Check B selling to A
+                    elif price_a > price_b + transport_cost_per_unit:
+                        potential_profit = price_a - price_b
+                        seller, buyer = s_b, s_a; seller_price, buyer_price = price_b, price_a
+                        qty_avail = seller.get_total_stored(good_id)
 
                     if seller is not None and qty_avail > 1e-6:
                         potential_qty = qty_avail
-                        if not good.is_bulk and good_id in seller.item_storage: potential_qty = seller.item_storage[good_id][0].quantity if seller.item_storage[good_id] else 0
-                        if potential_qty < min_trade_qty: potential_qty = 0 # Check against min trade qty
-                        # Check if buyer can afford at least the minimum quantity
-                        is_viable = (profit > 1e-6 and potential_qty >= min_trade_qty and buyer.wealth >= seller_price * min_trade_qty)
-                        self.potential_trades_this_tick.append({'seller_id': seller.id, 'buyer_id': buyer.id, 'seller_name': seller.name, 'buyer_name': buyer.name, 'good_id': good.id, 'good_name': good.name, 'seller_price': seller_price, 'buyer_price': buyer_price, 'profit_per_unit': profit, 'qty_avail': qty_avail, 'potential_qty': potential_qty, 'is_viable_prelim': is_viable})
-                        if is_viable: opportunities_for_execution.append({'from': seller, 'to': buyer, 'good': good, 'profit_per_unit': profit, 'potential_qty': potential_qty, 'seller_price': seller_price, 'buyer_price': buyer_price})
+                        if not good.is_bulk and good_id in seller.item_storage:
+                            potential_qty = seller.item_storage[good_id][0].quantity if seller.item_storage[good_id] else 0
 
-        opportunities_for_execution.sort(key=lambda x: x['profit_per_unit'], reverse=True)
+                        if potential_qty < min_trade_qty: potential_qty = 0
+
+                        min_qty_goods_cost = seller_price * min_trade_qty
+                        min_qty_transport_cost = transport_cost_per_unit * min_trade_qty
+                        min_qty_total_cost = min_qty_goods_cost + min_qty_transport_cost
+
+                        is_viable_prelim = (potential_profit > transport_cost_per_unit and potential_qty >= min_trade_qty and buyer.wealth >= min_qty_total_cost)
+
+                        self.potential_trades_this_tick.append({
+                            'seller_id': seller.id, 'buyer_id': buyer.id, 'seller_name': seller.name, 'buyer_name': buyer.name,
+                            'good_id': good.id, 'good_name': good.name, 'seller_price': seller_price, 'buyer_price': buyer_price,
+                            'potential_profit_per_unit': potential_profit, 'transport_cost_per_unit': transport_cost_per_unit,
+                            'qty_avail': qty_avail, 'potential_qty': potential_qty, 'distance': distance,
+                            'is_viable_prelim': is_viable_prelim
+                        })
+
+                        if is_viable_prelim:
+                            opportunities_for_execution.append({
+                                'from': seller, 'to': buyer, 'good': good,
+                                'potential_profit_per_unit': potential_profit,
+                                'transport_cost_per_unit': transport_cost_per_unit,
+                                'potential_qty': potential_qty, 'seller_price': seller_price,
+                                'buyer_price': buyer_price, 'distance': distance
+                            })
+
+        opportunities_for_execution.sort(key=lambda x: x['potential_profit_per_unit'], reverse=True)
         return opportunities_for_execution
 
     def execute_trades(self, opportunities):
-        """Attempts to execute trades, checking per-settlement trade capacity."""
+        """
+        Attempts to execute trades, checking capacity, transport costs,
+        and applying a max wealth percentage budget constraint.
+        """
         trades_executed_log_entries = []; self.executed_trade_details_this_tick.clear(); self.failed_trades_this_tick.clear()
         trades_count_global = 0; max_trades_global = self.params.get('max_trades_per_tick', 200)
-        min_trade_qty = self.params.get('min_trade_qty', 0.01) # Use config param
-        log_max_len = self.params.get('world_trade_log_max_length', 10) # Use config param
+        min_trade_qty = self.params.get('min_trade_qty', 0.01)
+        log_max_len = self.params.get('world_trade_log_max_length', 10)
+        # Use pre-fetched parameters
+        transport_cost_rate = self.transport_cost_per_distance_unit
+        max_trade_pct = self.max_trade_cost_wealth_percentage
 
         current_settlements_state = self.settlements.copy()
 
         for i, trade in enumerate(opportunities):
+            # --- Initial Setup & Checks ---
             seller_obj = current_settlements_state.get(trade['from'].id)
             buyer_obj = current_settlements_state.get(trade['to'].id)
             good = trade['good']
-            profit = trade['profit_per_unit']; seller_potential_qty = trade['potential_qty']; seller_price = trade['seller_price']
+            potential_profit = trade['potential_profit_per_unit']; seller_potential_qty = trade['potential_qty']
+            seller_price = trade['seller_price']
+            distance = trade['distance']
+            transport_cost_per_unit = trade['transport_cost_per_unit']
             fail_reason = ""
 
             if not seller_obj or not buyer_obj or seller_obj.is_abandoned or buyer_obj.is_abandoned:
                  fail_reason = "Settlement abandoned/removed"; self.failed_trades_this_tick.append({'seller_id': trade['from'].id, 'buyer_id': trade['to'].id, 'good_id': good.id, 'fail_reason': fail_reason, 'tick': self.tick}); continue
 
-            fail_log_base = {'seller_id': seller_obj.id, 'buyer_id': buyer_obj.id, 'seller_name': seller_obj.name, 'buyer_name': buyer_obj.name, 'good_id': good.id, 'good_name': good.name, 'seller_price': seller_price, 'buyer_price': trade['buyer_price'], 'profit_per_unit': profit, 'potential_qty': seller_potential_qty, 'qty_avail': seller_obj.get_total_stored(good.id)}
+            fail_log_base = {'seller_id': seller_obj.id, 'buyer_id': buyer_obj.id, 'seller_name': seller_obj.name, 'buyer_name': buyer_obj.name, 'good_id': good.id, 'good_name': good.name, 'seller_price': seller_price, 'buyer_price': trade['buyer_price'], 'potential_profit_per_unit': potential_profit, 'transport_cost_per_unit': transport_cost_per_unit, 'potential_qty': seller_potential_qty, 'qty_avail': seller_obj.get_total_stored(good.id)}
 
             if trades_count_global >= max_trades_global: fail_reason = "Skipped (Global Max Trades)"; self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
 
-            # Check Per-Settlement Trade Capacity
             if seller_obj.trades_executed_this_tick >= seller_obj.trade_capacity:
                 fail_reason = f"Seller max trades ({seller_obj.trades_executed_this_tick}/{seller_obj.trade_capacity})"; seller_obj.failed_trades_max_capacity_counter += 1; self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
             if buyer_obj.trades_executed_this_tick >= buyer_obj.trade_capacity:
                 fail_reason = f"Buyer max trades ({buyer_obj.trades_executed_this_tick}/{buyer_obj.trade_capacity})"; buyer_obj.failed_trades_max_capacity_counter += 1; self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
 
-            # Determine Actual Trade Quantity
-            trade_qty = 0.0; item_to_trade_instance_id = None
-            if good.is_bulk:
-                max_affordable = float('inf'); 
-                if seller_price > 1e-6: max_affordable = buyer_obj.wealth / seller_price
-                buyer_storage = max(0.0, buyer_obj.storage_capacity - buyer_obj.get_current_storage_load())
-                trade_qty = min(seller_potential_qty, max_affordable, buyer_storage)
-            else:
-                 if good.id in seller_obj.item_storage and seller_obj.item_storage[good.id]:
-                    item = seller_obj.item_storage[good.id][0]; trade_qty = item.quantity; item_to_trade_instance_id = item.instance_id
-                 else: fail_reason = "Seller Lacks Non-Bulk Item (Exec)"; self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
+            # --- Determine Trade Quantity ---
+            trade_qty = 0.0
+            item_to_trade_instance_id = None
+            cost_per_unit_total = seller_price + transport_cost_per_unit
+            initial_calc_trade_qty = 0.0 # Store qty before budget limit
 
-            # Ensure trade quantity meets minimum threshold from config
+            if good.is_bulk:
+                # 1. Calculate max affordable based on total wealth
+                max_affordable_qty = float('inf')
+                if cost_per_unit_total > 1e-6:
+                     max_affordable_qty = buyer_obj.wealth / cost_per_unit_total
+                # 2. Calculate max based on storage
+                buyer_storage = max(0.0, buyer_obj.storage_capacity - buyer_obj.get_current_storage_load())
+                # 3. Initial quantity is limited by stock, storage, and absolute affordability
+                initial_calc_trade_qty = min(seller_potential_qty, max_affordable_qty, buyer_storage)
+                trade_qty = initial_calc_trade_qty # Start with this value
+            else: # Non-bulk item handling
+                 if good.id in seller_obj.item_storage and seller_obj.item_storage[good.id]:
+                    item = seller_obj.item_storage[good.id][0]
+                    item_qty = item.quantity
+                    item_goods_cost = seller_price * item_qty
+                    item_transport_cost = transport_cost_per_unit * item_qty
+                    item_total_cost = item_goods_cost + item_transport_cost
+                    # Check absolute affordability first
+                    if buyer_obj.wealth < item_total_cost:
+                        fail_reason = f"Buyer Cannot Afford Non-Bulk + Transport ({buyer_obj.wealth:.1f}<{item_total_cost:.1f})"
+                        self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
+                    # Check wealth percentage budget limit
+                    max_cost_allowed = buyer_obj.wealth * max_trade_pct
+                    if item_total_cost > max_cost_allowed:
+                        fail_reason = f"Non-Bulk Cost ({item_total_cost:.1f}) Exceeds Budget ({max_cost_allowed:.1f})"
+                        self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
+                    # If affordable and within budget, set quantity
+                    trade_qty = item.quantity; item_to_trade_instance_id = item.instance_id
+                    initial_calc_trade_qty = trade_qty # Store for potential failure message later
+                 else:
+                    fail_reason = "Seller Lacks Non-Bulk Item (Exec)"; self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
+
+            # --- Apply Wealth Percentage Budget Limit (for bulk goods, non-bulk checked above) ---
+            budget_limited = False
+            if good.is_bulk and trade_qty > 1e-6: # Only apply if there's a potential quantity
+                max_cost_allowed = buyer_obj.wealth * max_trade_pct
+                max_qty_by_budget = float('inf')
+                if cost_per_unit_total > 1e-6:
+                    max_qty_by_budget = max_cost_allowed / cost_per_unit_total
+
+                if trade_qty > max_qty_by_budget + 1e-6: # Check if budget is the limiting factor
+                     budget_limited = True
+
+                trade_qty = min(trade_qty, max_qty_by_budget)
+
+            # --- Check Minimum Quantity ---
             if trade_qty < min_trade_qty:
-                 if seller_potential_qty < min_trade_qty: fail_reason = "Seller stock too low"
-                 elif 'max_affordable' in locals() and max_affordable < min_trade_qty: fail_reason = "Buyer cannot afford min qty"
-                 elif 'buyer_storage' in locals() and buyer_storage < min_trade_qty: fail_reason = "Buyer storage too low for min qty"
-                 else: fail_reason = f"Calc trade qty ({trade_qty:.3f}) too small"
+                 if seller_potential_qty < min_trade_qty: fail_reason = "Seller stock < min"
+                 elif 'max_affordable_qty' in locals() and max_affordable_qty < min_trade_qty: fail_reason = "Buyer cannot afford min qty (+ transport)"
+                 elif 'buyer_storage' in locals() and buyer_storage < min_trade_qty: fail_reason = "Buyer storage < min qty"
+                 elif budget_limited: fail_reason = f"Qty limited by budget ({trade_qty:.3f}) & < min" # Specific reason
+                 else: fail_reason = f"Calc trade qty ({trade_qty:.3f}) < min"
                  self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason}); continue
 
-            # Check Execution Feasibility
-            transaction_cost = seller_price * trade_qty
-            can_afford = buyer_obj.wealth >= (transaction_cost - 1e-6)
-            has_stock = seller_obj.get_total_stored(good.id) >= (trade_qty - 1e-6)
-            if not can_afford: fail_reason += f"Buyer Cannot Afford ({buyer_obj.wealth:.1f}<{transaction_cost:.1f}); "
-            if not has_stock: fail_reason += f"Seller Lacks Stock ({seller_obj.get_total_stored(good.id):.1f}<{trade_qty:.1f}); "
+            # --- Final Feasibility Check (Recalculate costs based on final trade_qty) ---
+            total_goods_cost = seller_price * trade_qty
+            total_transport_cost = transport_cost_per_unit * trade_qty
+            total_transaction_cost = total_goods_cost + total_transport_cost
 
-            # Execute Transaction
+            # Re-check affordability with final quantity (mostly redundant due to earlier checks, but safe)
+            can_afford = buyer_obj.wealth >= (total_transaction_cost - 1e-6)
+            has_stock = seller_obj.get_total_stored(good.id) >= (trade_qty - 1e-6)
+            if not can_afford: fail_reason += f"Buyer Cannot Afford Final Qty ({buyer_obj.wealth:.1f}<{total_transaction_cost:.1f}); "
+            if not has_stock: fail_reason += f"Seller Lacks Final Stock ({seller_obj.get_total_stored(good.id):.1f}<{trade_qty:.1f}); "
+
+            # --- Execute Transaction ---
             if can_afford and has_stock:
                 removed_qty, consumed_instances = seller_obj.remove_from_storage(good.id, trade_qty, tick=self.tick)
-                if removed_qty < trade_qty * 0.999:
+                if removed_qty < trade_qty * 0.999: # Check if removal succeeded
                     fail_reason += f"Failed Stock Removal ({removed_qty:.1f}/{trade_qty:.1f})";
                     if consumed_instances: seller_obj.add_to_storage(good, item_instance=consumed_instances[0], tick=self.tick)
                     elif removed_qty > 1e-6: seller_obj.add_to_storage(good, quantity=removed_qty, tick=self.tick)
@@ -514,26 +607,39 @@ class World:
 
                 added_qty = buyer_obj.add_to_storage(good, quantity=removed_qty if good.is_bulk else None, item_instance=item_instance_for_buyer, tick=self.tick)
 
-                if added_qty >= removed_qty * 0.999:
+                if added_qty >= removed_qty * 0.999: # Check if adding to buyer storage succeeded
                     # --- Success! ---
-                    final_cost = seller_price * added_qty; seller_obj.wealth += final_cost; buyer_obj.wealth -= final_cost
-                    seller_obj.trades_executed_this_tick += 1; buyer_obj.trades_executed_this_tick += 1 # Increment counters
-                    trade_log_msg = (f"T{self.tick}: {seller_obj.name} -> {buyer_obj.name}, {added_qty:.2f} {good.name} @ {seller_price:.2f}")
+                    # Use costs based on actual added_qty
+                    final_goods_cost = seller_price * added_qty
+                    final_transport_cost = transport_cost_per_unit * added_qty
+                    final_total_cost_buyer = final_goods_cost + final_transport_cost
+
+                    seller_obj.wealth += final_goods_cost # Seller gets only goods cost
+                    buyer_obj.wealth -= final_total_cost_buyer # Buyer pays goods + transport
+
+                    seller_obj.trades_executed_this_tick += 1; buyer_obj.trades_executed_this_tick += 1
+                    trade_log_msg = (f"T{self.tick}: {seller_obj.name} -> {buyer_obj.name}, {added_qty:.2f} {good.name} "
+                                     f"@ {seller_price:.2f} (Cost: {final_goods_cost:.2f}, TCost: {final_transport_cost:.2f})")
                     trades_executed_log_entries.append(trade_log_msg)
-                    self.executed_trade_details_this_tick.append({'seller_id': seller_obj.id, 'buyer_id': buyer_obj.id, 'seller_name': seller_obj.name, 'buyer_name': buyer_obj.name, 'good_id': good.id, 'good_name': good.name, 'quantity': added_qty, 'seller_price': seller_price, 'buyer_price': trade['buyer_price'], 'profit_per_unit': profit, 'tick': self.tick})
+                    self.executed_trade_details_this_tick.append({
+                        'seller_id': seller_obj.id, 'buyer_id': buyer_obj.id, 'seller_name': seller_obj.name, 'buyer_name': buyer_obj.name,
+                        'good_id': good.id, 'good_name': good.name, 'quantity': added_qty, 'seller_price': seller_price,
+                        'buyer_price': trade['buyer_price'], 'potential_profit_per_unit': potential_profit,
+                        'transport_cost_per_unit': transport_cost_per_unit, 'transport_cost_total': final_transport_cost,
+                        'tick': self.tick
+                    })
                     trades_count_global += 1
-                else: # Failed to add
+                else: # Failed to add to buyer storage
                     fail_reason += f"Buyer Storage Failed (Avail: {max(0, buyer_obj.storage_capacity - buyer_obj.get_current_storage_load()):.1f})"
+                    # IMPORTANT: Return goods to seller since transaction failed *after* removal
                     item_to_return = consumed_instances[0] if not good.is_bulk and consumed_instances else None
-                    if item_to_return and item_to_return.trade_history: item_to_return.trade_history.pop()
+                    if item_to_return and item_to_return.trade_history: item_to_return.trade_history.pop() # Remove trade history entry
                     seller_obj.add_to_storage(good, quantity=removed_qty if good.is_bulk else None, item_instance=item_to_return, tick=self.tick)
-                    # seller_obj.add_log(f"Fail trade to {buyer_obj.name} (storage?), {removed_qty:.1f} {good.name} returned", self.tick) # Redundant?
-                    # buyer_obj.add_log(f"Fail trade from {seller_obj.name} (storage full?)", self.tick) # Redundant?
                     self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason.strip()})
-            else: # Failed initial check
+            else: # Failed final feasibility check
                 self.failed_trades_this_tick.append({**fail_log_base, 'fail_reason': fail_reason.strip()})
 
-        # Use config param for log length
+        # Update recent trades log
         self.recent_trades_log = trades_executed_log_entries + self.recent_trades_log; self.recent_trades_log = self.recent_trades_log[:log_max_len]
 
     # --- Utility Methods ---
@@ -587,7 +693,7 @@ class World:
         settlements_to_remove_ids = []
         abandonment_wealth_threshold = self.params.get('abandonment_wealth_threshold', -100)
         abandonment_ticks_threshold = self.params.get('abandonment_ticks_threshold', 15)
-        for settlement in current_settlements:
+        for settlement in current_settlements: # Iterate original list to catch newly abandoned
             if settlement.is_abandoned: continue
             if settlement.wealth < abandonment_wealth_threshold: settlement.ticks_below_wealth_threshold += 1
             else: settlement.ticks_below_wealth_threshold = 0
@@ -595,9 +701,12 @@ class World:
                 settlement.is_abandoned = True; settlements_to_remove_ids.append(settlement.id)
                 print(f"INFO: Settlement {settlement.name} ({settlement.id}) abandoned at tick {self.tick} (Low Wealth: {settlement.wealth:.0f}).")
                 self.recent_trades_log.insert(0, f"T{self.tick}: {settlement.name} abandoned!"); self.recent_trades_log = self.recent_trades_log[:self.params.get('world_trade_log_max_length', 10)] # Use param
+
+        # Update the main dictionary *after* iterating
         if settlements_to_remove_ids:
             for settlement_id in settlements_to_remove_ids:
                 if settlement_id in self.settlements: del self.settlements[settlement_id]
+
 
         # --- Migration Phase ---
         migration_interval = self.params.get('migration_check_interval', 5)
@@ -605,23 +714,30 @@ class World:
             migration_wealth_threshold = self.params.get('migration_wealth_threshold', 0)
             migration_target_min_wealth = self.params.get('migration_target_min_wealth', 600)
             migration_max_percentage = self.params.get('migration_max_percentage', 0.1)
+            # Get currently active settlements for migration checks
             current_active_settlements = list(self.settlements.values())
             potential_emigrants = [s for s in current_active_settlements if s.wealth < migration_wealth_threshold and s.population > 1]
             potential_immigrants = [s for s in current_active_settlements if s.wealth >= migration_target_min_wealth]
             if potential_emigrants and potential_immigrants:
                 migrants_moved_total = 0
                 for emigrant in potential_emigrants:
-                    if emigrant.population <= 1 or emigrant.id not in self.settlements: continue
+                    # Ensure emigrant still exists and has population to migrate
+                    if emigrant.id not in self.settlements or emigrant.population <= 1: continue
                     best_target = None; min_dist = float('inf')
                     for immigrant in potential_immigrants:
-                        if emigrant.id == immigrant.id or immigrant.id not in self.settlements: continue
+                        # Ensure immigrant still exists and is not the same settlement
+                        if immigrant.id not in self.settlements or emigrant.id == immigrant.id: continue
                         dist = self._calculate_distance(emigrant, immigrant)
                         if dist < min_dist: min_dist = dist; best_target = immigrant
                     if best_target:
+                        # Ensure target still exists before proceeding
+                        if best_target.id not in self.settlements: continue
+
                         num_to_migrate = max(1, int(emigrant.population * migration_max_percentage))
                         num_to_migrate = min(num_to_migrate, emigrant.population - 1)
                         if num_to_migrate > 0:
-                            emigrant.population -= num_to_migrate; best_target.population += num_to_migrate
+                            emigrant.population -= num_to_migrate
+                            best_target.population += num_to_migrate
                             self.migration_details_this_tick.append({'tick': self.tick, 'from_id': emigrant.id, 'from_name': emigrant.name,'to_id': best_target.id, 'to_name': best_target.name, 'quantity': num_to_migrate})
                             emigrant.update_derived_stats(); best_target.update_derived_stats()
                             migrants_moved_total += num_to_migrate
