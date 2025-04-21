@@ -90,7 +90,7 @@ class SimulationUI:
         self.SV_TTK_AVAILABLE = SV_TTK_AVAILABLE
 
         self._apply_theme()
-        # <<< Initialize simulation as PAUSED >>>
+        # Initialize simulation as PAUSED
         self.simulation_running = False
 
         # --- Simulation State ---
@@ -132,7 +132,7 @@ class SimulationUI:
         control_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         self.tick_label = ttk.Label(control_frame, textvariable=self.tick_label_var, font=("Arial", 14, "bold"))
         self.tick_label.pack(side=tk.LEFT, padx=(0, 20))
-        # <<< Set initial button states for PAUSED >>>
+        # Set initial button states for PAUSED
         self.start_button = ttk.Button(control_frame, text="Start", command=self._start_sim, state=tk.NORMAL)
         self.start_button.pack(side=tk.LEFT, padx=5)
         self.pause_button = ttk.Button(control_frame, text="Pause", command=self._pause_sim, state=tk.DISABLED)
@@ -151,7 +151,9 @@ class SimulationUI:
         try:
              ui_map_pane.create_settlement_canvas_items(self) # Initial map draw
              ui_dynamic_pane.update_dynamic_pane(self) # Initial dynamic pane population
-             ui_static_pane.update_global_totals_display(self) # Initial global totals
+             # <<< REMOVED erroneous call to update_global_totals_display >>>
+             # ui_static_pane.update_global_totals_display(self)
+             ui_static_pane.update_static_pane(self) # Call the main static pane update once initially
              # Schedule the loop - it will check self.simulation_running
              self.root.after(self.TICK_DELAY_MS, self.update_simulation)
         except Exception as e:
@@ -160,7 +162,6 @@ class SimulationUI:
     # --- Simulation Control Methods ---
     def _pause_sim(self):
         """Pauses the simulation update loop."""
-        # This button should only be clickable if running=True
         if self.simulation_running:
             self.simulation_running = False
             self.pause_button.config(state=tk.DISABLED)
@@ -168,14 +169,12 @@ class SimulationUI:
             print("--- Simulation Paused ---")
     def _start_sim(self):
         """Starts or resumes the simulation update loop."""
-        # This button should only be clickable if running=False
         if not self.simulation_running:
             self.simulation_running = True
             self.pause_button.config(state=tk.NORMAL)
             self.start_button.config(state=tk.DISABLED)
             print("--- Simulation Resumed ---")
-            # Immediately schedule the next update
-            self.root.after(10, self.update_simulation)
+            self.root.after(10, self.update_simulation) # Schedule immediate update
 
     # --- Theme Application ---
     def _apply_theme(self):
@@ -216,17 +215,11 @@ class SimulationUI:
     # --- Main Update Loop ---
     def update_simulation(self):
         """Performs one tick of the simulation and calls UI update functions from modules."""
-        # --- Check if running ---
         if not self.simulation_running:
-            # If paused, just reschedule the check without running sim/updates
-            self.root.after(100, self.update_simulation)
-            return
-        # --- Check if window closed ---
+            self.root.after(100, self.update_simulation); return
         if not self.root.winfo_exists():
-            print("Root window closed, stopping simulation loop.")
-            return
+            print("Root window closed, stopping simulation loop."); return
 
-        # --- Run simulation and update UI ---
         try:
             start_tick_time = time.time()
             self.world.simulation_step() # 1. Run Sim Step
@@ -239,13 +232,11 @@ class SimulationUI:
             ui_static_pane.update_static_pane(self)
             ui_dynamic_pane.update_dynamic_pane(self)
             ui_map_pane.update_map_pane(self)
-            ui_analysis_window.update_analysis_window(self) # This now checks internally if window exists
+            ui_analysis_window.update_analysis_window(self)
             # 5. Schedule Next Update
             tick_duration = time.time() - start_tick_time
             delay = max(10, self.TICK_DELAY_MS - int(tick_duration * 1000))
-            # Check simulation_running again before scheduling next call
-            if self.simulation_running:
-                self.root.after(delay, self.update_simulation)
+            if self.simulation_running: self.root.after(delay, self.update_simulation)
         except Exception as e:
             print(f"\n--- ERROR DURING SIMULATION/UPDATE (Tick {self.world.tick}) ---"); traceback.print_exc()
             if self.root.winfo_exists(): self.root.quit()
@@ -257,3 +248,4 @@ if __name__ == "__main__":
     try: app = SimulationUI(root); root.mainloop()
     except Exception as e: print(f"\n--- FATAL ERROR INITIALIZING UI ---"); traceback.print_exc()
     finally: print("UI Closed / Application Finished.")
+
