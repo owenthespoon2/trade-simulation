@@ -2,36 +2,36 @@ import random
 import uuid
 import math
 import os
-import time
+import time # Ensure time is imported
 from collections import defaultdict, OrderedDict
 import json
 import math # Ensure math is imported for ceil
 
 # ==============================================================================
-# FILE INDEX (Updated for Departure Tick)
+# FILE INDEX (Updated for Good Type & Production Buffer Logic)
 # ==============================================================================
-# - Data Structures (Good, ItemInstance) : Line 25
-# - Settlement Class                      : Line 65
-#   - __init__                            : Line 68
-#   - _update_trade_capacity              : Line 120
-#   - update_derived_stats                : Line 133
-#   - add_log                             : Line 152 (Uses config param)
-#   - Storage Management (add/remove/get) : Line 157
-#   - decide_upgrade                      : Line 203 (Uses config param)
-#   - progress_upgrade                    : Line 230
-#   - produce                             : Line 258
-#   - consume                             : Line 330
-#   - update_prices                       : Line 350
-# - Region Class                          : Line 378
-# - Civilization Class                    : Line 384
-# - World Class                           : Line 390
-#   - __init__                            : Line 392
-#   - Entity Management (add/get)         : Line 416
-#   - get_global_good_totals              : Line 424
-#   - find_trade_opportunities            : Line 436
-#   - execute_trades                      : Line 493 (Adds departure_tick to shipment)
-#   - _calculate_distance                 : Line 650
-#   - simulation_step                     : Line 655 (Adds Shipment Arrival Phase)
+# - Data Structures (Good, ItemInstance) : Line 26 (Good.__init__ accepts good_type)
+# - Settlement Class                      : Line 74
+#   - __init__                            : Line 77
+#   - _update_trade_capacity              : Line 137
+#   - update_derived_stats                : Line 150
+#   - add_log                             : Line 169
+#   - Storage Management (add/remove/get) : Line 174
+#   - decide_upgrade                      : Line 220
+#   - progress_upgrade                    : Line 247
+#   - produce                             : Line 275 (Checks good_type against wealth buffer)
+#   - consume                             : Line 348
+#   - update_prices                       : Line 374
+# - Region Class                          : Line 403
+# - Civilization Class                    : Line 409
+# - World Class                           : Line 415
+#   - __init__                            : Line 417
+#   - Entity Management (add/get)         : Line 444
+#   - get_global_good_totals              : Line 452
+#   - find_trade_opportunities            : Line 464
+#   - execute_trades                      : Line 521
+#   - _calculate_distance                 : Line 679
+#   - simulation_step                     : Line 684
 # ==============================================================================
 
 
@@ -41,11 +41,16 @@ import math # Ensure math is imported for ceil
 
 class Good:
     """Represents a type of good that can be produced, traded, and consumed."""
-    def __init__(self, id, name, base_value, is_bulk=True, is_producible=False):
-        self.id = id; self.name = name; self.base_value = base_value
-        self.is_bulk = is_bulk; self.is_producible = is_producible
+    def __init__(self, id, name, base_value, color="#FFFFFF", is_bulk=True, is_producible=False, good_type="UNKNOWN"): # Added good_type
+        self.id = id
+        self.name = name
+        self.base_value = base_value
+        self.color = color
+        self.is_bulk = is_bulk
+        self.is_producible = is_producible
+        self.good_type = good_type # Store the good type (e.g., FOOD, RAW_MATERIAL)
         self.recipe = None
-    def __repr__(self): return f"Good({self.name})"
+    def __repr__(self): return f"Good({self.name}, Type: {self.good_type})" # Updated repr
     def add_recipe(self, inputs, outputs, labor, required_terrain=None, wealth_cost=0):
         if not self.is_producible: print(f"WARN: Cannot add recipe to non-producible good: {self.name}"); return
         if not isinstance(inputs, dict): raise TypeError(f"Recipe inputs for {self.id} must be a dict")
@@ -71,7 +76,7 @@ class ItemInstance:
 class Settlement:
     """Represents a settlement, managing population, resources, production, etc."""
     def __init__(self, id, name, region_id, population, terrain_type,
-                 sim_params, building_defs, # Now expects sim_params and building_defs
+                 sim_params, building_defs,
                  initial_wealth=None, x=0, y=0, z=0):
         """Initializes a Settlement."""
         self.id = id; self.name = name; self.region_id = region_id
@@ -106,6 +111,19 @@ class Settlement:
         self._labor_per_pop = float(self.params.get('labor_per_pop', 0.5))
         self._city_pop_threshold = int(self.params.get('city_population_threshold', 150))
         self._city_storage_multiplier = float(self.params.get('city_storage_multiplier', 1.5))
+        # Load production buffer here for use in produce()
+        self._production_wealth_buffer = float(self.params.get('production_wealth_buffer', 0.0))
+
+        # Load dynamic consumption parameters
+        self._consumption_fulfillment_threshold = float(self.params.get('consumption_fulfillment_threshold', 0.9))
+        self._consumption_need_increase_factor = float(self.params.get('consumption_need_increase_factor', 1.1))
+        self._consumption_need_decrease_factor = float(self.params.get('consumption_need_decrease_factor', 0.95))
+        self._consumption_need_max_multiplier = float(self.params.get('consumption_need_max_multiplier', 3.0))
+        # Ensure factors are reasonable
+        if self._consumption_need_increase_factor < 1.0: self._consumption_need_increase_factor = 1.0
+        if self._consumption_need_decrease_factor >= 1.0: self._consumption_need_decrease_factor = 0.99
+        if self._consumption_need_max_multiplier < 1.0: self._consumption_need_max_multiplier = 1.0
+
 
         # Initial calculation of derived stats
         self.max_labor_pool = 0.0; self.storage_capacity = 0.0; self.current_labor_pool = 0.0
@@ -275,11 +293,16 @@ class Settlement:
 
     # --- Economic Actions ---
     def produce(self, all_goods_dict, world_tick):
-        """Attempts to produce goods, tracks produced amounts."""
+        """
+        Attempts to produce goods, tracks produced amounts.
+        Allows FOOD production even if below wealth buffer.
+        """
         max_production_passes = self.params.get('max_production_passes', 5)
-        production_wealth_buffer = self.params.get('production_wealth_buffer', 0.0)
+        # Use the stored buffer value
+        production_wealth_buffer = self._production_wealth_buffer
         self.production_this_tick.clear()
-        if self.wealth < production_wealth_buffer: return
+        # Removed the early return based on wealth buffer
+
         self.current_labor_pool = self.max_labor_pool
 
         for _pass in range(max_production_passes):
@@ -287,15 +310,25 @@ class Settlement:
             producible_goods = OrderedDict((gid, g) for gid, g in all_goods_dict.items() if g.is_producible and g.recipe)
             if not producible_goods: break
             producible_items = list(producible_goods.items()); random.shuffle(producible_items)
+
             for good_id, good in producible_items:
+                # --- NEW: Check wealth buffer against good type ---
+                is_below_buffer = self.wealth < production_wealth_buffer
+                if is_below_buffer and good.good_type != 'FOOD':
+                    # Skip non-food production if below wealth buffer
+                    continue
+
                 recipe = good.recipe
                 if recipe['required_terrain'] and self.terrain_type not in recipe['required_terrain']: continue
                 if self.current_labor_pool < recipe['labor'] or self.wealth < recipe['wealth_cost']: continue
+
+                # Check inputs (rest of the logic remains the same)
                 inputs_available = True; required_inputs = recipe['inputs']
                 if required_inputs:
                     for input_good_id, input_qty in required_inputs.items():
                         if self.get_total_stored(input_good_id) < input_qty: inputs_available = False; break
                     if not inputs_available: continue
+
                 original_labor = self.current_labor_pool; original_wealth = self.wealth
                 temp_input_storage_state = {}; temp_output_storage_state = {}
                 self.current_labor_pool -= recipe['labor']; self.wealth -= recipe['wealth_cost']
@@ -333,43 +366,81 @@ class Settlement:
             if not production_possible_in_pass: break
 
     def consume(self, goods_dict, world_tick):
-        """Simulates consumption of goods by the population."""
+        """
+        Simulates consumption of goods by the population and adjusts
+        consumption_needs based on fulfillment.
+        """
         base_consumption_rate = self.params.get('base_consumption_rate', 0.1)
         city_pop_threshold = self.params.get('city_population_threshold', 150)
         is_city = self.population >= city_pop_threshold
+
         for good_id, good in goods_dict.items():
-            if good_id in ['iron_ore', 'seed']: continue
+            # Determine if this good should be consumed here (basic logic)
+            # Use good_type for potentially more complex logic later, but keep simple for now
+            if good.good_type == 'TOOL' or good.id == 'iron_ore' or good.id == 'seed': continue
             consume_this = (good_id == 'bread' and is_city) or \
-                           (good_id != 'bread' and not (good_id == 'grain' and is_city))
+                           (good_id == 'grain' and not is_city) # Simplified: Cities eat bread, others eat grain
+
             if consume_this:
+                # Use the current (potentially dynamic) need multiplier
                 demand_modifier = self.consumption_needs[good_id]
                 amount_needed = max(0, base_consumption_rate * self.population * demand_modifier * (1 + random.uniform(-0.1, 0.1)))
-                if amount_needed > 0.01:
+
+                if amount_needed > 1e-6: # Only process if there's some need
                     available = self.get_total_stored(good_id)
                     amount_to_consume = min(amount_needed, available)
-                    if amount_to_consume > 0.01:
+
+                    if amount_to_consume > 1e-6: # Only remove if consuming a non-negligible amount
                         self.remove_from_storage(good_id, amount_to_consume, tick=world_tick)
 
+                    # Adjust consumption_needs based on fulfillment
+                    fulfillment_ratio = 0.0
+                    if amount_needed > 1e-6: # Avoid division by zero
+                        fulfillment_ratio = amount_to_consume / amount_needed
+
+                    if fulfillment_ratio < self._consumption_fulfillment_threshold:
+                        # Need not met, increase the need multiplier
+                        new_need = self.consumption_needs[good_id] * self._consumption_need_increase_factor
+                        self.consumption_needs[good_id] = min(new_need, self._consumption_need_max_multiplier)
+                    else:
+                        # Need met, slightly decrease the need multiplier towards 1.0
+                        new_need = self.consumption_needs[good_id] * self._consumption_need_decrease_factor
+                        self.consumption_needs[good_id] = max(1.0, new_need)
+
     def update_prices(self, goods_dict, world_tick):
-        """Updates local prices based on supply and demand estimates."""
+        """Updates local prices based on supply and demand estimates (using dynamic needs)."""
         base_consumption_rate = self.params.get('base_consumption_rate', 0.1)
         price_sensitivity = self.params.get('price_sensitivity', 2.0)
         min_price_multiplier = self.params.get('min_price_multiplier', 0.1)
         max_price_multiplier = self.params.get('max_price_multiplier', 10.0)
         city_pop_threshold = self.params.get('city_population_threshold', 150)
         is_city = self.population >= city_pop_threshold
+
         for good_id, good in goods_dict.items():
-            supply = max(self.get_total_stored(good_id), 0.01)
-            demand_estimate = 0.01
-            if good_id not in ['iron_ore', 'seed']:
-                if (good_id == 'bread' and is_city) or \
-                   (good_id != 'bread' and not (good_id == 'grain' and is_city)):
+            supply = max(self.get_total_stored(good_id), 0.01) # Use a small floor for supply
+            demand_estimate = 0.01 # Use a small floor for demand
+
+            # Determine if this good is demanded here
+            # Use good_type for potentially more complex logic later
+            if good.good_type != 'TOOL' and good.id != 'iron_ore' and good.id != 'seed':
+                consume_this = (good_id == 'bread' and is_city) or \
+                               (good_id == 'grain' and not is_city) # Simplified consumption logic
+                if consume_this:
+                    # Use the potentially dynamic consumption_needs multiplier
                     demand_estimate = max(0.01, base_consumption_rate * self.population * self.consumption_needs[good_id])
+
+            # Calculate price based on supply/demand ratio
             ratio = supply / demand_estimate
             price_modifier = math.pow(ratio, -price_sensitivity)
-            min_price = good.base_value * min_price_multiplier; max_price = good.base_value * max_price_multiplier
+
+            # Apply min/max price multipliers based on base value
+            min_price = good.base_value * min_price_multiplier
+            max_price = good.base_value * max_price_multiplier
             new_price = good.base_value * price_modifier
+
+            # Clamp the price within the min/max bounds
             self.local_prices[good_id] = max(min_price, min(new_price, max_price))
+
 
 # ==============================================================================
 # Region & Civilization Classes (Unchanged)
@@ -386,7 +457,7 @@ class Civilization:
 # ==============================================================================
 class World:
     """Manages the overall simulation state and orchestrates the simulation loop."""
-    def __init__(self, sim_params, building_defs):
+    def __init__(self, sim_params, building_defs, tick_duration_sec=1.0): # Added tick_duration_sec
         """Initializes the World object."""
         self.tick = 0; self.goods = OrderedDict(); self.settlements = OrderedDict()
         self.regions = OrderedDict(); self.civilizations = OrderedDict(); self.trade_routes = {}
@@ -400,9 +471,15 @@ class World:
         self.max_trade_cost_wealth_percentage = float(self.params.get('max_trade_cost_wealth_percentage', 1.0))
         self.base_transport_speed = float(self.params.get('base_transport_speed', 1.0))
         if self.base_transport_speed <= 0: self.base_transport_speed = 1.0
+
+        # Store tick duration for arrival time calculation
+        self.tick_duration_sec = float(tick_duration_sec)
+        if self.tick_duration_sec <= 0: self.tick_duration_sec = 1.0 # Safety check
+
         print(f"World initialized. Transport Cost/Dist: {self.transport_cost_per_distance_unit}, "
               f"Max Trade % Wealth: {self.max_trade_cost_wealth_percentage:.2f}, "
-              f"Transport Speed: {self.base_transport_speed}")
+              f"Transport Speed: {self.base_transport_speed}, "
+              f"Tick Duration: {self.tick_duration_sec}s") # Log tick duration
 
     # --- Entity Management ---
     def add_good(self, good): self.goods[good.id] = good
@@ -490,7 +567,8 @@ class World:
     def execute_trades(self, opportunities):
         """
         Attempts to execute trades: checks capacity, costs, budget, removes goods
-        from seller, transfers wealth, and creates an in-transit shipment record.
+        from seller, transfers wealth, and creates an in-transit shipment record
+        including precise timing information.
         """
         trades_executed_log_entries = []; self.executed_trade_details_this_tick.clear(); self.failed_trades_this_tick.clear()
         trades_count_global = 0; max_trades_global = self.params.get('max_trades_per_tick', 200)
@@ -597,10 +675,15 @@ class World:
                 seller_obj.wealth += final_goods_cost
                 buyer_obj.wealth -= final_total_cost_buyer
 
-                # 3. Create Shipment Record
+                # 3. Create Shipment Record (with precise timing)
                 travel_ticks = max(1, math.ceil(distance / transport_speed))
                 arrival_tick = self.tick + travel_ticks
-                departure_tick = self.tick # NEW: Store departure tick
+                departure_tick = self.tick
+
+                # --- Calculate precise timing ---
+                departure_time_sec = time.perf_counter() # Record precise departure time
+                travel_duration_sec = travel_ticks * self.tick_duration_sec # Calculate travel time in seconds
+                arrival_time_sec = departure_time_sec + travel_duration_sec # Calculate precise arrival time
 
                 shipment_item_instance = None
                 if not good.is_bulk and consumed_instances:
@@ -608,14 +691,15 @@ class World:
                     shipment_item_instance.trade_history.append((seller_obj.id, seller_price, self.tick))
 
                 shipment = {
-                    'departure_tick': departure_tick, # NEW
+                    'departure_tick': departure_tick,
                     'arrival_tick': arrival_tick,
+                    'departure_time_sec': departure_time_sec, # NEW
+                    'arrival_time_sec': arrival_time_sec,     # NEW
                     'buyer_id': buyer_obj.id,
                     'seller_id': seller_obj.id,
                     'good_id': good.id,
                     'quantity': removed_qty,
                     'item_instance': shipment_item_instance,
-                    # Add unique ID for easier UI tracking
                     'shipment_id': f"{seller_obj.id}-{buyer_obj.id}-{good.id}-{departure_tick}-{random.randint(1000,9999)}"
                 }
                 self.in_transit_shipments.append(shipment)
@@ -631,7 +715,9 @@ class World:
                     'good_id': good.id, 'good_name': good.name, 'quantity': removed_qty, 'seller_price': seller_price,
                     'buyer_price': trade['buyer_price'], 'potential_profit_per_unit': potential_profit,
                     'transport_cost_per_unit': transport_cost_per_unit, 'transport_cost_total': final_transport_cost,
-                    'tick': self.tick, 'arrival_tick': arrival_tick
+                    'tick': self.tick, 'arrival_tick': arrival_tick,
+                    'departure_time_sec': departure_time_sec, # Add timing to details log too
+                    'arrival_time_sec': arrival_time_sec
                 })
                 trades_count_global += 1
 
@@ -665,7 +751,7 @@ class World:
         # --- Get Current Active Settlements ---
         active_settlements = [s for s in self.settlements.values() if not s.is_abandoned]
 
-        # --- Shipment Arrival Phase ---
+        # --- Shipment Arrival Phase (Still based on ticks) ---
         remaining_shipments = []
         shipments_arrived_count = 0
         for shipment in self.in_transit_shipments:
@@ -704,12 +790,13 @@ class World:
 
         # --- Core Economic Phases ---
         for settlement in active_settlements: settlement.produce(self.goods, self.tick)
+        # Consume and update needs *before* updating prices
         for settlement in active_settlements: settlement.consume(self.goods, self.tick)
         for settlement in active_settlements: settlement.update_prices(self.goods, self.tick)
 
-        # --- Trade Phase (Initiates new shipments) ---
+        # --- Trade Phase (Initiates new shipments with time data) ---
         opportunities = self.find_trade_opportunities()
-        self.execute_trades(opportunities)
+        self.execute_trades(opportunities) # This now adds time_sec data
 
         # --- Upgrade Decision Phase ---
         for settlement in active_settlements:
@@ -726,9 +813,9 @@ class World:
         settlements_to_remove_ids = []
         abandonment_wealth_threshold = self.params.get('abandonment_wealth_threshold', -100)
         abandonment_ticks_threshold = self.params.get('abandonment_ticks_threshold', 15)
-        for settlement_id in list(self.settlements.keys()):
-            settlement = self.settlements[settlement_id]
-            if settlement.is_abandoned: continue
+        for settlement_id in list(self.settlements.keys()): # Use list copy for safe iteration
+            settlement = self.settlements.get(settlement_id) # Use .get() for safety
+            if not settlement or settlement.is_abandoned: continue # Skip if already removed or abandoned
             if settlement.wealth < abandonment_wealth_threshold: settlement.ticks_below_wealth_threshold += 1
             else: settlement.ticks_below_wealth_threshold = 0
             if settlement.ticks_below_wealth_threshold >= abandonment_ticks_threshold:
@@ -737,8 +824,12 @@ class World:
                 self.recent_trades_log.insert(0, f"T{self.tick}: {settlement.name} abandoned!"); self.recent_trades_log = self.recent_trades_log[:self.params.get('world_trade_log_max_length', 10)]
 
         if settlements_to_remove_ids:
-            for settlement_id in settlements_to_remove_ids:
-                if settlement_id in self.settlements: del self.settlements[settlement_id]
+            # Create a new dictionary excluding the abandoned settlements
+            new_settlements = OrderedDict()
+            for sid, settlement in self.settlements.items():
+                if sid not in settlements_to_remove_ids:
+                    new_settlements[sid] = settlement
+            self.settlements = new_settlements
 
 
         # --- Migration Phase ---
@@ -747,19 +838,23 @@ class World:
             migration_wealth_threshold = self.params.get('migration_wealth_threshold', 0)
             migration_target_min_wealth = self.params.get('migration_target_min_wealth', 600)
             migration_max_percentage = self.params.get('migration_max_percentage', 0.1)
+            # Use list() to create a copy for safe iteration
             current_active_settlements = list(self.settlements.values())
             potential_emigrants = [s for s in current_active_settlements if s.wealth < migration_wealth_threshold and s.population > 1]
             potential_immigrants = [s for s in current_active_settlements if s.wealth >= migration_target_min_wealth]
             if potential_emigrants and potential_immigrants:
                 migrants_moved_total = 0
                 for emigrant in potential_emigrants:
+                    # Check if emigrant still exists
                     if emigrant.id not in self.settlements or emigrant.population <= 1: continue
                     best_target = None; min_dist = float('inf')
                     for immigrant in potential_immigrants:
+                        # Check if immigrant still exists and is not the same as emigrant
                         if immigrant.id not in self.settlements or emigrant.id == immigrant.id: continue
                         dist = self._calculate_distance(emigrant, immigrant)
                         if dist < min_dist: min_dist = dist; best_target = immigrant
                     if best_target:
+                        # Check if target still exists
                         if best_target.id not in self.settlements: continue
                         num_to_migrate = max(1, int(emigrant.population * migration_max_percentage))
                         num_to_migrate = min(num_to_migrate, emigrant.population - 1)
@@ -771,3 +866,4 @@ class World:
                             migrants_moved_total += num_to_migrate
 
 # --- NO Main Execution Block Here ---
+

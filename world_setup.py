@@ -2,20 +2,22 @@ import json
 import sys
 from collections import defaultdict, OrderedDict
 import random
+import time # Import time module
 
 # ==============================================================================
-# FILE INDEX
+# FILE INDEX (Updated for Reading Good Type)
 # ==============================================================================
-# - Imports                               : Line 5
-# - setup_world Function                  : Line 16
-#   - Load Configuration                  : Line 20 (Loads sim_params, goods_defs, building_defs)
-#   - Initialize World                    : Line 51 (Passes sim_params, building_defs)
-#   - Define Goods (from Config)          : Line 55
-#   - Load Recipes                        : Line 76
-#   - Define Settlements                  : Line 96 (Passes sim_params, building_defs to constructor)
-#   - Add Initial Stock                   : Line 153
-#   - Define Regions & Civilizations      : Line 169
-# - Test Block (`if __name__ == "__main__"`) : Line 186
+# - Imports                               : Line 6
+# - setup_world Function                  : Line 19
+#   - Load Configuration                  : Line 23
+#   - Calculate Tick Duration             : Line 49
+#   - Initialize World                    : Line 54
+#   - Define Goods (from Config)          : Line 58 (Reads 'good_type')
+#   - Load Recipes                        : Line 86
+#   - Define Settlements                  : Line 106
+#   - Add Initial Stock                   : Line 163
+#   - Define Regions & Civilizations      : Line 179
+# - Test Block (`if __name__ == "__main__"`) : Line 196 (Prints good_type)
 # ==============================================================================
 
 
@@ -28,17 +30,18 @@ except ImportError as e:
     print("-" * 50); print("FATAL ERROR: Cannot import classes from 'trade_logic.py'."); print(f"ImportError: {e}"); print("Please ensure 'trade_logic.py' exists, is in the same directory, and is runnable."); print("-" * 50); sys.exit(1)
 
 # --- Simulation Setup Function ---
-def setup_world(config_file="config.json", recipe_file="recipes.json"):
+def setup_world(config_file="config.json", recipe_file="recipes.json", tick_duration_sec=1.0):
     """
     Creates and initializes the simulation world state.
 
-    Loads simulation parameters, goods definitions, building definitions, and recipes
-    from JSON files, creates initial settlements, regions, and civilizations,
-    and adds initial stock to settlements.
+    Loads simulation parameters, goods definitions (including colors & types),
+    building definitions, and recipes from JSON files, creates initial settlements,
+    regions, and civilizations, and adds initial stock to settlements.
 
     Args:
         config_file (str): Path to the main configuration JSON file.
         recipe_file (str): Path to the recipes JSON file.
+        tick_duration_sec (float): The duration of a simulation tick in seconds.
 
     Returns:
         World: The fully initialized World object.
@@ -51,36 +54,50 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
     print(f"Attempting to load configuration from: {config_file}")
     sim_params = {}
     goods_defs = {}
-    building_defs = {} # NEW: Load building definitions
+    building_defs = {}
+    ui_params = {"tick_delay_ms": 1000}
     try:
         with open(config_file, 'r') as f: config_data = json.load(f)
         sim_params = config_data.get("simulation_parameters", {})
         goods_defs = config_data.get("goods_definitions", {})
-        building_defs = config_data.get("building_definitions", {}) # NEW: Load building definitions
+        building_defs = config_data.get("building_definitions", {})
+        ui_params = config_data.get("ui_parameters", ui_params)
         print(f"Successfully loaded configuration from {config_file}")
     except FileNotFoundError:
         print(f"ERROR: Config file '{config_file}' not found. Using default parameters.")
-        # Define default sim_params if file not found (consider if this is desired behavior)
-        sim_params = { "price_sensitivity": 2.0, "storage_capacity_per_pop": 10.0, "max_trades_per_tick": 200, "labor_per_pop": 0.5, "trade_profit_margin_threshold": 1.05, "settlement_default_initial_wealth": 500, "base_consumption_rate": 0.1, "max_production_passes": 5, "min_price_multiplier": 0.1, "max_price_multiplier": 10.0, "city_population_threshold": 150, "city_storage_multiplier": 1.5, "storage_cost_per_unit": 0.01, "production_wealth_buffer": 10.0, "abandonment_wealth_threshold": -100, "abandonment_ticks_threshold": 15, "migration_check_interval": 5, "migration_wealth_threshold": 0, "migration_target_min_wealth": 600, "migration_max_percentage": 0.1, "base_trade_capacity": 5, "market_upgrade_fail_trigger": 5, "min_trade_qty": 0.01, "settlement_log_max_length": 10, "world_trade_log_max_length": 10 }
-        goods_defs = {} # No default goods
-        building_defs = {} # No default buildings
+        sim_params = { "price_sensitivity": 2.0, "storage_capacity_per_pop": 10.0, "max_trades_per_tick": 200, "labor_per_pop": 0.5, "trade_profit_margin_threshold": 1.05, "settlement_default_initial_wealth": 500, "base_consumption_rate": 0.1, "max_production_passes": 5, "min_price_multiplier": 0.1, "max_price_multiplier": 10.0, "city_population_threshold": 150, "city_storage_multiplier": 1.5, "storage_cost_per_unit": 0.01, "production_wealth_buffer": 10.0, "abandonment_wealth_threshold": -100, "abandonment_ticks_threshold": 15, "migration_check_interval": 5, "migration_wealth_threshold": 0, "migration_target_min_wealth": 600, "migration_max_percentage": 0.1, "base_trade_capacity": 5, "market_upgrade_fail_trigger": 5, "min_trade_qty": 0.01, "settlement_log_max_length": 10, "world_trade_log_max_length": 10, "transport_cost_per_distance_unit": 0.02, "max_trade_cost_wealth_percentage": 1.0, "base_transport_speed": 50.0, "consumption_fulfillment_threshold": 0.9, "consumption_need_increase_factor": 1.1, "consumption_need_decrease_factor": 0.95, "consumption_need_max_multiplier": 3.0 }
+        goods_defs = {}
+        building_defs = {}
     except json.JSONDecodeError: print(f"ERROR: Could not decode JSON from '{config_file}'. Check file format. Exiting."); sys.exit(1)
     except Exception as e: print(f"ERROR: An unexpected error occurred loading config: {e}. Exiting."); sys.exit(1)
 
     if not goods_defs: print("ERROR: No goods definitions found in config file or defaults. Cannot setup world."); sys.exit(1)
     if not sim_params: print("ERROR: No simulation parameters found in config file or defaults. Cannot setup world."); sys.exit(1)
-    # It's okay if building_defs is empty initially
 
-    # --- Initialize World with Simulation Parameters and Building Definitions ---
+    # --- Initialize World ---
     print("Initializing World object...")
-    # NEW: Pass sim_params and building_defs to World constructor
-    world = World(sim_params=sim_params, building_defs=building_defs)
+    world = World(sim_params=sim_params,
+                  building_defs=building_defs,
+                  tick_duration_sec=tick_duration_sec)
 
     # --- Define Goods Dynamically from Config ---
     print("Loading goods definitions...")
+    default_good_color = "#FFFFFF"
+    default_good_type = "UNKNOWN" # Default type if missing
     for good_id, definition in goods_defs.items():
         try:
-            good = Good(id=good_id, name=definition['name'], base_value=float(definition['base_value']), is_bulk=bool(definition.get('is_bulk', True)), is_producible=bool(definition.get('is_producible', False)))
+            good_color = definition.get('color', default_good_color)
+            # Read good_type, provide default if missing
+            good_type = definition.get('good_type', default_good_type)
+            good = Good(
+                id=good_id,
+                name=definition['name'],
+                base_value=float(definition['base_value']),
+                color=good_color,
+                is_bulk=bool(definition.get('is_bulk', True)),
+                is_producible=bool(definition.get('is_producible', False)),
+                good_type=good_type # Pass the good type
+            )
             world.add_good(good)
         except KeyError as ke: print(f"ERROR: Missing required key {ke} in goods definition for '{good_id}'. Skipping.")
         except Exception as e: print(f"ERROR: Could not create good '{good_id}' from definition: {e}. Skipping.")
@@ -105,49 +122,43 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
 
     # --- Define Settlements ---
     print("Defining initial settlements...")
-    # Get parameters needed for Settlement initialization from sim_params
     default_wealth = sim_params.get('settlement_default_initial_wealth', 500)
-
-    # Standardized starting population and wealth for testing
     standard_start_pop = 100
-    standard_start_wealth = default_wealth # Use the default value from config
+    standard_start_wealth = default_wealth
     print(f"NOTE: Standardizing starting population to {standard_start_pop} and wealth to {standard_start_wealth} for all settlements.")
 
     settlements_to_add = []
-    # FUTURE: This section will need significant changes to define initial internal buildings and agent populations.
-    # NEW: Pass sim_params and building_defs to the Settlement constructor
     settlements_to_add.append(Settlement(
         id='A', name='Farmstead', region_id='R1', population=standard_start_pop, terrain_type='Grassland',
-        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
-        initial_wealth=standard_start_wealth, # Use standard wealth
+        sim_params=sim_params, building_defs=building_defs,
+        initial_wealth=standard_start_wealth,
         x=100, y=100, z=0
     ))
     settlements_to_add.append(Settlement(
         id='B', name='Logger\'s Camp', region_id='R1', population=standard_start_pop, terrain_type='Forest',
-        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
-        initial_wealth=standard_start_wealth, # Use standard wealth
+        sim_params=sim_params, building_defs=building_defs,
+        initial_wealth=standard_start_wealth,
         x=100, y=300, z=5
     ))
     settlements_to_add.append(Settlement(
         id='C', name='Mine Town', region_id='R2', population=standard_start_pop, terrain_type='Mountain',
-        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
-        initial_wealth=standard_start_wealth, # Use standard wealth
+        sim_params=sim_params, building_defs=building_defs,
+        initial_wealth=standard_start_wealth,
         x=400, y=100, z=20
     ))
     settlements_to_add.append(Settlement(
         id='D', name='Craftburg', region_id='R2', population=standard_start_pop, terrain_type='Hills',
-        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
-        initial_wealth=standard_start_wealth, # Use standard wealth
+        sim_params=sim_params, building_defs=building_defs,
+        initial_wealth=standard_start_wealth,
         x=400, y=300, z=10
     ))
     settlements_to_add.append(Settlement(
         id='E', name='Metropolis', region_id='R2', population=standard_start_pop, terrain_type='Plains',
-        sim_params=sim_params, building_defs=building_defs, # Pass params and defs
-        initial_wealth=standard_start_wealth, # Use standard wealth
+        sim_params=sim_params, building_defs=building_defs,
+        initial_wealth=standard_start_wealth,
         x=250, y=200, z=0
     ))
 
-    # Add Settlements to World
     for s in settlements_to_add: world.add_settlement(s)
 
     # --- Add Initial Stock ---
@@ -182,15 +193,28 @@ def setup_world(config_file="config.json", recipe_file="recipes.json"):
 # --- Optional: Test setup ---
 if __name__ == "__main__":
     print("="*30); print("Executing world_setup.py directly for testing..."); print("="*30)
+    # Calculate tick duration from default UI params for testing
+    # Load config to get actual delay if possible
+    test_tick_duration = 1.0
     try:
-        test_world = setup_world()
+        with open("config.json", 'r') as f:
+            _cfg = json.load(f)
+            test_tick_duration = _cfg.get("ui_parameters", {}).get("tick_delay_ms", 1000) / 1000.0
+    except Exception:
+        print("WARN: Could not load tick delay from config for test, using 1.0s")
+
+    try:
+        test_world = setup_world(tick_duration_sec=test_tick_duration) # Pass duration
+        print(f"Test World Tick Duration: {test_world.tick_duration_sec}s") # Verify
         print("-" * 20); print("Goods defined:")
-        for good in test_world.goods.values(): print(f"  - {good} (Producible: {good.is_producible}, Recipe: {'Yes' if good.recipe else 'No'})")
+        # Updated print statement to show good_type
+        for good in test_world.goods.values(): print(f"  - {good.name} (ID: {good.id}, Type: {good.good_type}, Color: {good.color}, Producible: {good.is_producible}, Recipe: {'Yes' if good.recipe else 'No'})")
         print("-" * 20); print("Settlements created:")
-        for settlement in test_world.get_all_settlements(): print(f"  - {settlement} (Storage Cap: {settlement.storage_capacity:.0f}, Labor Pool: {settlement.max_labor_pool:.1f}, Market Lvl: {settlement.market_level}, Trade Cap: {settlement.trade_capacity})") # Added market info
+        for settlement in test_world.get_all_settlements(): print(f"  - {settlement} (Storage Cap: {settlement.storage_capacity:.0f}, Labor Pool: {settlement.max_labor_pool:.1f}, Market Lvl: {settlement.market_level}, Trade Cap: {settlement.trade_capacity})")
         print("-" * 20); print("Regions created:")
         for region in test_world.regions.values(): print(f"  - {region.name} (Settlements: {[s.name for s in region.settlements]})")
         print("-" * 20); print("Setup test complete."); print("="*30)
     except Exception as e:
         print(f"\n--- ERROR DURING WORLD SETUP TEST ---"); print(e)
         import traceback; traceback.print_exc(); print("-" * 35)
+

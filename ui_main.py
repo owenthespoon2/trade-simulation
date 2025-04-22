@@ -1,15 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font as tkFont
-import time
+import time # Keep time import
 import traceback
 import sys
 import json
-import random # Needed for color generation potentially
+import random
 
 # --- Import Simulation Logic & Setup ---
 try:
-    from trade_logic import World
+    from trade_logic import World, Good
     from world_setup import setup_world
 except ImportError:
     print("ERROR: Make sure 'trade_logic.py' and 'world_setup.py' exist and are runnable.")
@@ -21,7 +21,6 @@ try:
     import ui_dynamic_pane
     import ui_map_pane
     import ui_analysis_window
-    # import ui_components # Commented out as it doesn't exist yet
 except ImportError as e:
     print(f"ERROR: Failed to import UI module: {e}")
     print("Ensure ui_static_pane.py, ui_dynamic_pane.py, ui_map_pane.py, ui_analysis_window.py exist.")
@@ -37,12 +36,19 @@ except ImportError:
 
 # --- Load UI Configuration ---
 DEFAULT_UI_PARAMS = {
-    "tick_delay_ms": 1000, "trade_effect_duration_ms": 1200, "settlement_radius": 15,
-    "trade_marker_radius": 4, "window_title": "Emergent Trade Simulation", "settlement_base_radius": 8,
-    "settlement_wealth_scale": 4.0, "settlement_wealth_sqrt_scale": 0.5,
-    "settlement_max_radius_increase": 25, "city_color": "#e27a7a",
-    "goods_colors": ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A"], # Minimal default colors
-    "default_shipment_color": "#e94e77"
+    "tick_delay_ms": 1000,
+    "animation_frame_delay_ms": 33, # NEW: Target delay for animation frames (~30 FPS)
+    "trade_effect_duration_ms": 1200,
+    "settlement_radius": 15,
+    "trade_marker_radius": 4,
+    "window_title": "Emergent Trade Simulation",
+    "settlement_base_radius": 8,
+    "settlement_wealth_sqrt_scale": 0.5,
+    "settlement_max_radius_increase": 25,
+    "city_color": "#e27a7a",
+    "default_shipment_color": "#FFFFFF",
+    "shipment_marker_radius": 3,
+    "shipment_marker_offset": 4
 }
 DEFAULT_SIM_PARAMS = { "city_population_threshold": 150 }
 
@@ -51,7 +57,7 @@ sim_params_for_ui = DEFAULT_SIM_PARAMS.copy()
 try:
     with open("config.json", 'r') as f: config_data = json.load(f)
     loaded_ui_params = config_data.get("ui_parameters", {}); loaded_sim_params = config_data.get("simulation_parameters", {})
-    ui_params.update(loaded_ui_params) # Overwrite defaults with loaded values
+    ui_params.update(loaded_ui_params)
     sim_params_for_ui['city_population_threshold'] = loaded_sim_params.get('city_population_threshold', DEFAULT_SIM_PARAMS['city_population_threshold'])
     print(f"Loaded UI parameters from config.json.")
 except FileNotFoundError: print("WARN: config.json not found. Using default UI parameters.")
@@ -61,15 +67,14 @@ except Exception as e: print(f"ERROR loading UI parameters from config.json: {e}
 # --- Theme colors ---
 DARK_BG = "#2e2e2e"; DARK_FG = "#cccccc"; DARK_INSERT_BG = "#555555"
 CANVAS_BG = "#1e1e1e"; SETTLEMENT_COLOR = "#4a90e2"; WEALTH_TEXT_COLOR = "#ffffff"
-TRADE_ROUTE_COLOR = "#f5a623"; TRADE_ROUTE_FLASH_COLOR = "#ffffff"; TRADE_MARKER_COLOR = "#50e3c2"
-# Default shipment color loaded from ui_params now
-
+TRADE_ROUTE_COLOR = "#f5a623"; TRADE_ROUTE_FLASH_COLOR = "#ffffff";
 
 # --- Main Simulation UI Class ---
 class SimulationUI:
     """
     Manages the main Tkinter window, simulation state, and coordinates updates
-    across different UI panes/modules.
+    across different UI panes/modules. Includes separate loops for simulation
+    ticks and visual animation.
     """
 
     def __init__(self, root):
@@ -81,29 +86,39 @@ class SimulationUI:
 
         # --- Store Constants and Theme Info on Instance ---
         self.TICK_DELAY_MS = ui_params['tick_delay_ms']
+        # NEW: Animation frame delay
+        self.ANIMATION_FRAME_DELAY_MS = ui_params.get('animation_frame_delay_ms', 33)
         self.TRADE_EFFECT_DURATION_MS = ui_params['trade_effect_duration_ms']
         self.SETTLEMENT_BASE_RADIUS = ui_params['settlement_base_radius']
         self.SETTLEMENT_WEALTH_SCALE_PARAM = ui_params.get('settlement_wealth_sqrt_scale', 0.5)
         self.SETTLEMENT_MAX_RADIUS_INCREASE = ui_params['settlement_max_radius_increase']
-        self.TRADE_MARKER_RADIUS = ui_params['trade_marker_radius']
         self.CITY_COLOR = ui_params.get('city_color', "#e27a7a")
         self.CITY_POP_THRESHOLD = sim_params_for_ui['city_population_threshold']
         self.DARK_BG = DARK_BG; self.DARK_FG = DARK_FG; self.DARK_INSERT_BG = DARK_INSERT_BG
         self.CANVAS_BG = CANVAS_BG; self.SETTLEMENT_COLOR = SETTLEMENT_COLOR; self.WEALTH_TEXT_COLOR = WEALTH_TEXT_COLOR
-        self.TRADE_ROUTE_COLOR = TRADE_ROUTE_COLOR; self.TRADE_ROUTE_FLASH_COLOR = TRADE_ROUTE_FLASH_COLOR; self.TRADE_MARKER_COLOR = TRADE_MARKER_COLOR
-        self.SHIPMENT_MARKER_COLOR = ui_params.get('default_shipment_color', "#e94e77")
+        self.TRADE_ROUTE_COLOR = TRADE_ROUTE_COLOR; self.TRADE_ROUTE_FLASH_COLOR = TRADE_ROUTE_FLASH_COLOR;
+        self.DEFAULT_SHIPMENT_COLOR = ui_params.get('default_shipment_color', "#FFFFFF")
+        self.SHIPMENT_MARKER_RADIUS = ui_params.get('shipment_marker_radius', 3)
+        self.SHIPMENT_MARKER_OFFSET = ui_params.get('shipment_marker_offset', 4)
         self.SV_TTK_AVAILABLE = SV_TTK_AVAILABLE
 
         self._apply_theme()
         self.simulation_running = False
         # --- Timing Control ---
-        self.last_tick_time = 0 # Time the last tick processing started
-        self.next_tick_target_time = 0 # Target time for the next tick
+        self.last_tick_time = 0
+        self.next_tick_target_time = 0
 
         # --- Simulation State ---
         print("Setting up world...")
         try:
-            self.world = setup_world(config_file="config.json", recipe_file="recipes.json")
+            # Calculate tick duration in seconds to pass to world setup
+            self.tick_duration_sec = self.TICK_DELAY_MS / 1000.0
+            if self.tick_duration_sec <= 0: self.tick_duration_sec = 1.0 # Safety
+
+            self.world = setup_world(config_file="config.json",
+                                     recipe_file="recipes.json",
+                                     tick_duration_sec=self.tick_duration_sec) # Pass duration
+
             self.sorted_goods = sorted(self.world.goods.values(), key=lambda g: g.id)
             self.settlements = sorted(self.world.get_all_settlements(), key=lambda s: s.id)
             self.settlement_coords = {s.id: (s.x, s.y, s.z) for s in self.settlements}
@@ -113,6 +128,7 @@ class SimulationUI:
             print(f"\n--- ERROR DURING WORLD SETUP ---"); print(e); traceback.print_exc(); self.root.quit(); return
 
         # --- UI Widget References ---
+        # (Keep existing widget references)
         self.settlements_tree = None; self.goods_tree = None; self.recipe_text = None; self.global_totals_tree = None
         self.scrollable_canvas = None; self.scrollable_frame = None; self.canvas_frame_id = None
         self.settlement_widgets = {}
@@ -157,30 +173,45 @@ class SimulationUI:
 
         self._setup_notebook() # Setup notebook (contains map)
 
-        print("Starting simulation loop (initially paused)...")
+        print("Starting simulation and animation loops (initially paused)...")
         try:
+             # Initial UI population
              ui_map_pane.create_settlement_canvas_items(self)
              ui_dynamic_pane.update_dynamic_pane(self)
              ui_static_pane.update_static_pane(self)
+
              # Initialize timing for the first tick
              self.last_tick_time = time.perf_counter()
-             self.next_tick_target_time = self.last_tick_time + (self.TICK_DELAY_MS / 1000.0)
-             # Schedule the loop using the new timing method
-             self.root.after(10, self.update_simulation) # Start quickly
+             self.next_tick_target_time = self.last_tick_time + self.tick_duration_sec
+
+             # Schedule the main simulation loop
+             self.root.after(10, self.update_simulation)
+
+             # Schedule the animation loop (runs independently)
+             self.root.after(self.ANIMATION_FRAME_DELAY_MS, self._update_animation_frame)
+
         except Exception as e:
              print(f"\n--- ERROR ON FIRST SIMULATION START ---"); print(e); traceback.print_exc(); self.root.quit()
 
     # --- Good Color Assignment ---
     def _assign_good_colors(self):
-        """Assigns colors to goods using the list from ui_params."""
+        """
+        Assigns colors to goods by reading the 'color' attribute directly
+        from each Good object in the world.
+        """
         colors = {}
-        color_list = ui_params.get('goods_colors', [])
-        if not color_list:
-            print("WARN: No 'goods_colors' found in ui_parameters. Using default shipment color.")
-            color_list = [self.SHIPMENT_MARKER_COLOR]
-        for i, good_id in enumerate(self.world.goods.keys()):
-            colors[good_id] = color_list[i % len(color_list)]
-        print(f"Assigned colors to {len(colors)} goods.")
+        if not hasattr(self, 'world') or not self.world.goods:
+            print("WARN: World or world.goods not initialized when assigning colors.")
+            return colors
+
+        print("Assigning colors directly from Good objects...")
+        for good_id, good_obj in self.world.goods.items():
+            colors[good_id] = getattr(good_obj, 'color', self.DEFAULT_SHIPMENT_COLOR)
+            if not isinstance(colors[good_id], str) or not colors[good_id].startswith('#'):
+                print(f"WARN: Invalid color format '{colors[good_id]}' for good '{good_id}'. Using default: {self.DEFAULT_SHIPMENT_COLOR}")
+                colors[good_id] = self.DEFAULT_SHIPMENT_COLOR
+
+        print(f"Assigned colors to {len(colors)} goods from their definitions.")
         return colors
 
     # --- Simulation Control Methods ---
@@ -191,6 +222,8 @@ class SimulationUI:
             self.pause_button.config(state=tk.DISABLED)
             self.start_button.config(state=tk.NORMAL)
             print("--- Simulation Paused ---")
+            # Note: Animation loop continues running even when paused
+
     def _start_sim(self):
         """Starts or resumes the simulation update loop."""
         if not self.simulation_running:
@@ -200,7 +233,7 @@ class SimulationUI:
             print("--- Simulation Resumed ---")
             # Reset target time when resuming to avoid large jump
             self.last_tick_time = time.perf_counter()
-            self.next_tick_target_time = self.last_tick_time + (self.TICK_DELAY_MS / 1000.0)
+            self.next_tick_target_time = self.last_tick_time + self.tick_duration_sec
             self.root.after(10, self.update_simulation) # Schedule immediate update
 
     # --- Theme Application ---
@@ -236,7 +269,7 @@ class SimulationUI:
         self.viz_pane_frame.grid(row=0, column=0, sticky="nsew")
         self.viz_pane_frame.columnconfigure(0, weight=1)
         self.viz_pane_frame.columnconfigure(1, weight=0, minsize=100)
-        self.viz_pane_frame.rowconfigure(0, weight=1) # Changed row index for map row to 0
+        self.viz_pane_frame.rowconfigure(0, weight=1)
         ui_map_pane.setup_map_pane(self.viz_pane_frame, self)
         self.notebook.add(self.dynamic_pane_frame, text='Settlement Details')
         self.notebook.add(self.viz_pane_frame, text='Map')
@@ -254,12 +287,12 @@ class SimulationUI:
 
         try:
             current_time = time.perf_counter()
-            self.last_tick_time = current_time # Record start time of processing
+            self.last_tick_time = current_time
 
             # --- Simulation Logic ---
             self.world.simulation_step()
 
-            # --- UI Updates ---
+            # --- UI Updates (Tick-Based) ---
             self.tick_label_var.set(f"Tick: {self.world.tick}")
             self.settlements = sorted(self.world.get_all_settlements(), key=lambda s: s.id)
             self.settlement_coords = {s.id: (s.x, s.y, s.z) for s in self.settlements}
@@ -267,32 +300,19 @@ class SimulationUI:
 
             ui_static_pane.update_static_pane(self)
             ui_dynamic_pane.update_dynamic_pane(self)
-            ui_map_pane.update_map_pane(self)
+            # Call the tick-based map update (settlement visuals, last trade label)
+            ui_map_pane.update_map_pane_tick_based(self) # MODIFIED CALL
             ui_analysis_window.update_analysis_window(self)
 
             # --- Scheduling Next Tick (Fixed Timestep Logic) ---
             processing_end_time = time.perf_counter()
             processing_time_sec = processing_end_time - self.last_tick_time
-            target_delay_sec = self.TICK_DELAY_MS / 1000.0
+            target_delay_sec = self.tick_duration_sec # Use stored duration
 
-            # Calculate the actual time for the next tick
             self.next_tick_target_time += target_delay_sec
-
-            # Calculate delay needed to reach the next target time
             current_time_after_processing = time.perf_counter()
             delay_sec = self.next_tick_target_time - current_time_after_processing
-            delay_ms = max(1, int(delay_sec * 1000)) # Ensure at least 1ms delay
-
-            # Adjust target time if we've fallen behind significantly (optional, prevents large jumps)
-            # if delay_sec < -(target_delay_sec * 2): # Example: If more than 2 ticks behind
-            #     print(f"WARN: Tick {self.world.tick} fell significantly behind. Resetting target time.")
-            #     self.next_tick_target_time = current_time_after_processing + target_delay_sec
-            #     delay_ms = max(1, int(target_delay_sec * 1000))
-
-
-            # Debugging Print (Optional)
-            # print(f"Tick {self.world.tick} | Proc: {processing_time_sec*1000:.1f}ms | Next Target: {self.next_tick_target_time:.3f} | Delay: {delay_ms}ms")
-
+            delay_ms = max(1, int(delay_sec * 1000))
 
             if self.simulation_running: # Check again
                 self.root.after(delay_ms, self.update_simulation)
@@ -300,6 +320,27 @@ class SimulationUI:
         except Exception as e:
             print(f"\n--- ERROR DURING SIMULATION/UPDATE (Tick {self.world.tick}) ---"); traceback.print_exc()
             if self.root.winfo_exists(): self.root.quit()
+
+    # --- NEW: Animation Update Loop ---
+    def _update_animation_frame(self):
+        """Handles smooth visual updates, like shipment marker movement."""
+        if not self.root.winfo_exists():
+            # Stop loop if window is closed
+            return
+
+        try:
+            # Call the map pane function responsible for smooth updates
+            ui_map_pane.update_shipment_marker_positions_smoothly(self)
+
+            # Reschedule the next animation frame
+            self.root.after(self.ANIMATION_FRAME_DELAY_MS, self._update_animation_frame)
+
+        except Exception as e:
+            print(f"\n--- ERROR DURING ANIMATION FRAME UPDATE ---"); traceback.print_exc()
+            # Decide if you want to stop animation on error or just log and continue
+            # For now, let's try to continue
+            if self.root.winfo_exists():
+                 self.root.after(self.ANIMATION_FRAME_DELAY_MS, self._update_animation_frame)
 
 
 # --- Main Execution Block ---

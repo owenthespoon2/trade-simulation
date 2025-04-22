@@ -5,7 +5,7 @@
     "max_trades_per_tick": 200,
     "labor_per_pop": 0.5,
     "trade_profit_margin_threshold": 1.05,
-    "settlement_default_initial_wealth": 1000,
+    "settlement_default_initial_wealth": 5000,
     "base_consumption_rate": 0.1,
     "max_production_passes": 5,
     "min_price_multiplier": 0.1,
@@ -27,31 +27,51 @@
     "world_trade_log_max_length": 10,
     "transport_cost_per_distance_unit": 0.0005,
     "max_trade_cost_wealth_percentage": 0.25,
-    "base_transport_speed": 50.0
+    "base_transport_speed": 50.0,
+    "consumption_fulfillment_threshold": 0.9,
+    "consumption_need_increase_factor": 1.1,
+    "consumption_need_decrease_factor": 0.95,
+    "consumption_need_max_multiplier": 3.0
   },
   "ui_parameters": {
     "tick_delay_ms": 1000,
-    "trade_effect_duration_ms": 500,
-    "settlement_radius": 15,
+    "animation_frame_delay_ms": 33,
+    "trade_effect_duration_ms": 1200,
     "trade_marker_radius": 4,
     "window_title": "Emergent Trade Simulation (v3)",
     "settlement_base_radius": 2,
     "settlement_wealth_sqrt_scale": 0.5,
     "settlement_max_radius_increase": 50,
     "city_color": "#e27a7a",
-    "goods_colors": [ 
-        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F",
-        "#BB8FCE", "#F1948A", "#85C1E9", "#AEB6BF", "#EDBB99", "#A3E4D7"
-    ],
-    "default_shipment_color": "#e94e77" 
+    "default_shipment_color": "#FFFFFF",
+    "shipment_marker_radius": 3,
+    "shipment_marker_offset": 4
   },
   "goods_definitions": {
-    "wood": { "name": "Wood", "base_value": 5.0, "is_bulk": true, "is_producible": true },
-    "iron_ore": { "name": "Iron Ore", "base_value": 10.0, "is_bulk": true, "is_producible": true },
-    "seed": { "name": "Seed", "base_value": 2.0, "is_bulk": true, "is_producible": true },
-    "grain": { "name": "Grain", "base_value": 8.0, "is_bulk": true, "is_producible": true },
-    "tools": { "name": "Tools", "base_value": 50.0, "is_bulk": false, "is_producible": true },
-    "bread": { "name": "Bread", "base_value": 12.0, "is_bulk": true, "is_producible": true }
+    "wood": {
+      "name": "Wood", "base_value": 5.0, "is_bulk": true, "is_producible": true,
+      "color": "#A0522D", "good_type": "RAW_MATERIAL"
+    },
+    "iron_ore": {
+      "name": "Iron Ore", "base_value": 10.0, "is_bulk": true, "is_producible": true,
+      "color": "#778899", "good_type": "RAW_MATERIAL"
+    },
+    "seed": {
+      "name": "Seed", "base_value": 2.0, "is_bulk": true, "is_producible": true,
+      "color": "#90EE90", "good_type": "RAW_MATERIAL"
+    },
+    "grain": {
+      "name": "Grain", "base_value": 8.0, "is_bulk": true, "is_producible": true,
+      "color": "#F5DEB3", "good_type": "RAW_MATERIAL"
+    },
+    "tools": {
+      "name": "Tools", "base_value": 50.0, "is_bulk": false, "is_producible": true,
+      "color": "#808080", "good_type": "TOOL"
+    },
+    "bread": {
+      "name": "Bread", "base_value": 12.0, "is_bulk": true, "is_producible": true,
+      "color": "#D2B48C", "good_type": "FOOD"
+    }
   },
   "building_definitions": {
     "market": {
