@@ -117,30 +117,30 @@ def _create_settlement_detail_widgets(parent_frame, settlement, app):
     widgets['frame'] = frame
 
     # Configure grid columns inside the LabelFrame
-    frame.columnconfigure(1, weight=0, minsize=70) # Column for values - give minsize
+    frame.columnconfigure(1, weight=0, minsize=80) # Value column - fixed minsize
     frame.columnconfigure(2, weight=1, minsize=150) # Inventory tree
     frame.columnconfigure(3, weight=1, minsize=100) # Production tree
 
     # --- Create Labels for basic stats ---
+    # FIX: Use consistent width for value labels to reduce jitter
+    label_width = 12 # Adjust as needed based on expected max number length
     widgets['pop_label_title'] = ttk.Label(frame, text="Population:")
-    widgets['pop_label_value'] = ttk.Label(frame, text="0", width=6, anchor="e") # Fixed width
+    widgets['pop_label_value'] = ttk.Label(frame, text="0", width=label_width, anchor="e")
     widgets['wealth_label_title'] = ttk.Label(frame, text="Wealth:")
-    widgets['wealth_label_value'] = ttk.Label(frame, text="0.0", width=8, anchor="e") # Fixed width
+    widgets['wealth_label_value'] = ttk.Label(frame, text="0.0", width=label_width, anchor="e")
     widgets['labor_label_title'] = ttk.Label(frame, text="Labor:")
-    widgets['labor_label_value'] = ttk.Label(frame, text="0.0 / 0.0", width=10, anchor="e") # Fixed width
+    widgets['labor_label_value'] = ttk.Label(frame, text="0.0 / 0.0", width=label_width, anchor="e")
     widgets['storage_label_title'] = ttk.Label(frame, text="Storage:")
-    widgets['storage_label_value'] = ttk.Label(frame, text="0.0 / 0.0", width=12, anchor="e") # Fixed width
-
-    # --- NEW: Market Level and Trade Capacity Labels ---
+    widgets['storage_label_value'] = ttk.Label(frame, text="0.0 / 0.0", width=label_width, anchor="e")
     widgets['market_level_title'] = ttk.Label(frame, text="Market Lvl:")
-    widgets['market_level_value'] = ttk.Label(frame, text="1", width=6, anchor="e") # Fixed width
+    widgets['market_level_value'] = ttk.Label(frame, text="1", width=label_width, anchor="e")
     widgets['trade_capacity_title'] = ttk.Label(frame, text="Trades:")
-    widgets['trade_capacity_value'] = ttk.Label(frame, text="0/0", width=10, anchor="e") # Fixed width
+    widgets['trade_capacity_value'] = ttk.Label(frame, text="0/0", width=label_width, anchor="e")
 
     # --- Grid Labels ---
     row_offset = 0 # Start placing labels at row 0
     widgets['pop_label_title'].grid(row=row_offset, column=0, sticky="w")
-    widgets['pop_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5)) # Align right, add padding
+    widgets['pop_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
     row_offset += 1
     widgets['wealth_label_title'].grid(row=row_offset, column=0, sticky="w")
     widgets['wealth_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
@@ -151,7 +151,6 @@ def _create_settlement_detail_widgets(parent_frame, settlement, app):
     widgets['storage_label_title'].grid(row=row_offset, column=0, sticky="w")
     widgets['storage_label_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
     row_offset += 1
-    # --- NEW: Grid Market/Trade Labels ---
     widgets['market_level_title'].grid(row=row_offset, column=0, sticky="w")
     widgets['market_level_value'].grid(row=row_offset, column=1, sticky="e", padx=(0,5))
     row_offset += 1
@@ -176,11 +175,6 @@ def _create_settlement_detail_widgets(parent_frame, settlement, app):
     prod_tree.heading("produced", text=prod_names[1]); prod_tree.column("produced", width=40, anchor=tk.E, stretch=tk.NO)
     widgets['prod_tree'] = prod_tree
 
-    # Add small scrollbars to treeviews if desired (optional)
-    # inv_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=inv_tree.yview)
-    # inv_tree.configure(yscrollcommand=inv_scrollbar.set)
-    # inv_scrollbar.grid(row=0, column=2, rowspan=4, sticky='nse', padx=(0, 5)) # Adjust grid position
-
     return widgets
 
 def _update_settlement_detail_widgets(settlement, widgets, app):
@@ -192,16 +186,14 @@ def _update_settlement_detail_widgets(settlement, widgets, app):
         widgets (dict): The dictionary containing references to this settlement's widgets.
         app (SimulationUI): The main application instance (to access world.goods).
     """
-    # Update Labels
+    # Update Labels - Format numbers consistently
     widgets['pop_label_value'].config(text=f"{int(round(settlement.population))}")
-    widgets['wealth_label_value'].config(text=f"{settlement.wealth:.1f}")
-    widgets['labor_label_value'].config(text=f"{settlement.current_labor_pool:.1f}/{settlement.max_labor_pool:.1f}")
+    widgets['wealth_label_value'].config(text=f"{settlement.wealth:,.1f}") # Add comma separator, 1 decimal
+    widgets['labor_label_value'].config(text=f"{settlement.current_labor_pool:.1f} / {settlement.max_labor_pool:.1f}")
     storage_load = settlement.get_current_storage_load(); storage_cap = settlement.storage_capacity
-    widgets['storage_label_value'].config(text=f"{storage_load:.1f}/{storage_cap:.0f}")
-
-    # --- NEW: Update Market Level and Trade Capacity ---
+    widgets['storage_label_value'].config(text=f"{storage_load:.1f} / {storage_cap:.0f}")
     widgets['market_level_value'].config(text=f"{settlement.market_level}")
-    widgets['trade_capacity_value'].config(text=f"{settlement.trades_executed_this_tick}/{settlement.trade_capacity}")
+    widgets['trade_capacity_value'].config(text=f"{settlement.trades_executed_this_tick} / {settlement.trade_capacity}")
 
     # Update Inventory Treeview
     inv_tree = widgets['inv_tree']
@@ -234,8 +226,7 @@ def _update_settlement_detail_widgets(settlement, widgets, app):
         except Exception as e: print(f"Error inserting prod none: {e}")
 
 
-# --- Scrollable Frame Helper Methods --- (Copied from original trade_ui.py)
-# These need access to the app instance to find the canvas/frame
+# --- Scrollable Frame Helper Methods ---
 def _on_frame_configure(event, app):
     """Updates the scroll region when the inner frame size changes."""
     if hasattr(app, 'scrollable_canvas') and app.scrollable_canvas.winfo_exists():
@@ -256,3 +247,4 @@ def _on_mousewheel(event, app):
         elif event.num == 4 or event.delta > 0: # Scroll up
             app.scrollable_canvas.yview_scroll(-1, "units")
 # --- End Scrollable Frame Helpers ---
+
