@@ -1,13 +1,4 @@
-(Begin Response)
-MESSAGE ID: 2 CURRENT FILE: README.md CURRENT PHASE: 2.3.7 (General parameter tuning) CURRENT TASK: Provide the updated README.md content as a downloadable file.
-Alright, I will generate the updated README.md file for you to download.
-
-Python
-
-import display
-
-# Updated README.md content based on previous confirmation
-readme_content = """# Emergent Trade Simulation Prototype
+# Emergent Trade Simulation Prototype
 
 ## Project Goal
 
@@ -66,28 +57,33 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     ```bash
     python ui_main.py
     ```
+    Or, once implemented, run headless mode (details TBD in Phase 3).
 
 ## Development Plan & Future Goals (Python Prototype)
 
 * **Phase 0 - 2.1 (Logic & UI):** Initial setup, core logic implementation, UI creation, bulk trades, UI enhancements, refactoring, performance optimizations, Market building logic & config parameters, Market UI display - *Completed.*
 
-* **Phase 2: Core Economic Tuning, Trade Realism & Infrastructure**
+* **Phase 2: Core Economic Tuning (Initial), Trade Realism & Infrastructure**
     * **2.2 (Trade Logistics & Visualization):** - *Completed.*
-    * **2.3 (Economic Balancing I):**
+    * **2.3 (Economic Balancing - Initial):**
         * **2.3.1-2.3.6:** Economic Logic & Abandonment Refinements - *Completed.*
     * **2.4 (Tick Timing Fix):** - *Completed.*
     * **2.6 (Enhanced Data Display & Analysis UI):** - *Completed.*
-    * **2.3.7 (NEXT):** General parameter tuning.
+    * *(Note: Phase 2.3.7 General Parameter Tuning moved to Phase 5)*
 
-* **Phase 3: Storage, Wealth & Analysis**
-    * **3.1:** Evaluate Storage Limits -> Implement **Storehouse Buildings** (configurable, adds to `storage_capacity`, requires build cost/time). Define initial building types in `config.json` (or separate `buildings.json`).
-    * **3.2:** Implement **Detailed Data Export** feature (CSV/JSON dump of settlement state, global state, trade logs per tick or on demand).
-    * **3.3:** Implement **Headless Mode** (CLI execution, run for N ticks, output summary/file).
-    * **3.4:** Economic Balancing II (Adjust parameters based on Storehouse impact and longer runs).
-    * **3.5:** Handle **Negative Wealth** more gracefully (e.g., production stops completely, migration chance increases drastically, potential for debt mechanics later).
-    * **3.6:** Implement "Low Wealth" alerts/tracking in UI similar to low food.
+* **Phase 3: Headless/Console Mode Implementation (Performance Focus)**
+    * **3.1 (NEXT):** Implement **Headless/Console Mode**:
+        * **Goal:** Create a fast-running version of the simulation without the graphical overhead of Tkinter, enabling quicker testing, balancing, and long-term runs. The console output should provide essential information, potentially mimicking Dwarf Fortress ASCII style. The Tkinter UI becomes a secondary tool for detailed visual inspection when needed.
+        * **Tasks:**
+            * Add CLI arguments (`argparse`) to `ui_main.py` or create a new script (`run_headless.py`) to enable non-GUI execution.
+            * Implement CLI options: run for N ticks, load specific config, output summary/final state to file.
+            * Design and implement console output:
+                * Regularly print key global stats (tick, total pop, avg wealth, etc.).
+                * Provide a periodic summary of settlement states (ID, Name, Pop, Wealth, key stocks/needs).
+                * *Optional:* Explore using libraries like `curses` for a more structured terminal UI, or stick to formatted print statements for simplicity/portability. Focus on clarity and conveying critical simulation state changes.
+            * Ensure core simulation logic (`world.simulation_step()`) can run independently of the UI update calls.
 
-* **Phase 4: UI/UX Overhaul**
+* **Phase 4: UI/UX Overhaul (Tkinter Refinement)**
     * **4.1:** Implement **Improved Map Visuals** (Consider options beyond basic Tkinter Canvas - e.g., visual cues for terrain, resource icons, better representation of Z-coordinate if feasible).
     * **4.2:** Refactor **Recipe display** to pop-out window/separate tab instead of static pane.
     * **4.3:** Implement **Map-Linked Side Panel** for Settlement Details (clicking settlement on map shows details in a dedicated panel, perhaps replacing legend temporarily).
@@ -95,38 +91,46 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     * **4.5:** Relocate static pane tables (Settlements, Goods, Globals, Averages, Volume) to a dedicated "Global Stats" tab or incorporate into map side panel (from 4.3).
     * **4.6:** General UI cleanup and improvements (layout consistency, tooltips, etc.).
 
-* **Phase 5: Item Provenance & Emergent Markets**
-    * **5.1:** Implement **Detailed Item Tracking**:
+* **Phase 5: Core Economic Tuning & Refinements**
+    * **5.1:** **General Parameter Tuning:** Run simulations (using Headless mode for speed), observe outcomes, adjust `config.json` values (price sensitivity, consumption rates, abandonment thresholds, etc.) for stable and interesting economic behavior over longer periods.
+    * **5.2:** Implement **Detailed Data Export** feature (CSV/JSON dump of settlement state, global state, trade logs per tick or on demand - potentially integrated with headless mode output).
+    * **5.3:** Evaluate Storage Limits -> Implement **Storehouse Buildings** (configurable, adds to `storage_capacity`, requires build cost/time). Define initial building types in `config.json` (or separate `buildings.json`).
+    * **5.4:** Economic Balancing II (Adjust parameters based on Storehouse impact, headless runs, and insights from tuning in 5.1).
+    * **5.5:** Handle **Negative Wealth** more gracefully (e.g., production stops completely, migration chance increases drastically, potential for debt mechanics later).
+    * **5.6:** Implement "Low Wealth" alerts/tracking in UI similar to low food.
+
+* **Phase 6: Item Provenance & Emergent Markets**
+    * **6.1:** Implement **Detailed Item Tracking**:
         * Introduce `ItemInstance` class in `trade_logic.py` for non-bulk goods.
         * Differentiate between bulk (quantity tracked) and tracked goods (list of `ItemInstance`).
         * Add `OriginSettlementID`, `TradeHistory` to `ItemInstance`.
         * Modify `produce`, `consume`, `add/remove_from_storage`, `execute_trades` to handle `ItemInstance`.
         * *Performance consideration: Limit tracking to valuable/crafted goods initially.*
-    * **5.2:** Implement **Item Component Tracking** (Add `components` list to `ItemInstance` for crafted goods, linking back to input items/bulk resources).
-    * **5.3:** Introduce **Emergent Markets**:
+    * **6.2:** Implement **Item Component Tracking** (Add `components` list to `ItemInstance` for crafted goods, linking back to input items/bulk resources).
+    * **6.3:** Introduce **Emergent Markets**:
         * Add `MarketLevel` attribute to `Settlement`.
         * Implement logic for `MarketLevel` increase (based on trade volume, wealth, population).
         * Define `MarketLevel` effects in `config.json` (e.g., slight price volatility reduction, attract more abstract trade/future agents, potential minor trade capacity boost independent of building upgrades).
         * Add `MarketLevel` display to UI (Settlement Details).
-    * **5.4:** Implement **UI for Item Tracking** (Ability to inspect `ItemInstance` details - origin, history, components - potentially via drill-down in Settlement Details pane).
+    * **6.4:** Implement **UI for Item Tracking** (Ability to inspect `ItemInstance` details - origin, history, components - potentially via drill-down in Settlement Details pane).
 
-* **Phase 6: Towards Agent-Based Simulation (Conceptual)**
-    * **6.1:** Initial **Agent & Building** Structures:
+* **Phase 7: Towards Agent-Based Simulation (Conceptual)**
+    * **7.1:** Initial **Agent & Building** Structures:
         * Define basic `Agent` and `Building` classes in `trade_logic.py`.
         * Refactor `Settlement` to act as a container/manager for `Agent` and `Building` objects.
         * Replace `Settlement.population` integer with a list/dict of simple `Agent` objects (initially, maybe just type and basic needs).
         * Define initial `Agent` and `Building` types in configuration (`agents.json`?, `buildings.json`?).
-    * **6.2:** **Delegate Core Logic**:
+    * **7.2:** **Delegate Core Logic**:
         * Begin shifting `produce` logic to specific `Agent` types working at `Building` types (e.g., Farmer Agent at Field Building).
         * Begin shifting `consume` logic to `Agent` needs (e.g., Agents require Food).
         * Consider moving price calculation to a central `Market` building within the settlement.
-    * **6.3:** **Agent Needs & State**: Introduce more complex agent state (inventory, current task) and universal needs (e.g., food, shelter).
-    * **6.4:** **Market Information / Broadcasting Needs**: Explore mechanisms for settlements/markets to broadcast needs/surpluses, potentially influencing abstract trade or future agent decisions.
-    * **6.5:** **Internal Settlement Coordinates**: Consider if internal buildings/agents need relative coordinates within a settlement's area for future detailed visualization/interaction.
-    * **6.6:** **World Simulation Step Expansion**: Add phases for Agent actions (task execution) and Building management to `World.simulation_step`.
-    * *Note: This phase focuses on setting up the structures; full agent behavior is likely Phase 7+ or the Unity version.*
+    * **7.3:** **Agent Needs & State**: Introduce more complex agent state (inventory, current task) and universal needs (e.g., food, shelter).
+    * **7.4:** **Market Information / Broadcasting Needs**: Explore mechanisms for settlements/markets to broadcast needs/surpluses, potentially influencing abstract trade or future agent decisions.
+    * **7.5:** **Internal Settlement Coordinates**: Consider if internal buildings/agents need relative coordinates within a settlement's area for future detailed visualization/interaction.
+    * **7.6:** **World Simulation Step Expansion**: Add phases for Agent actions (task execution) and Building management to `World.simulation_step`.
+    * *Note: This phase focuses on setting up the structures; full agent behavior is likely Phase 8+ or the Unity version.*
 
-* **Phase 7+ ("V2.0" / Long Term - Python Prototype):**
+* **Phase 8+ ("V2.0" / Long Term - Python Prototype):**
     * Expand Agent behaviors (pathfinding between buildings, complex task selection).
     * Implement Trader Agents making decisions based on `ItemInstance` details and market broadcasts.
     * Introduce more building types and interactions.
