@@ -164,13 +164,23 @@ def setup_world(config_file="config.json", recipe_file="recipes.json", tick_dura
     # --- Add Initial Stock ---
     print("Adding initial stock to settlements...")
     try:
-        if 'seed' in world.goods: world.settlements['A'].add_to_storage(world.goods['seed'], quantity=5, tick=-1)
-        if 'grain' in world.goods: world.settlements['A'].add_to_storage(world.goods['grain'], quantity=50, tick=-1)
+        if 'seed' in world.goods: world.settlements['A'].add_to_storage(world.goods['seed'], quantity=500, tick=-1)
+        if 'grain' in world.goods: world.settlements['A'].add_to_storage(world.goods['grain'], quantity=500, tick=-1)
+
         if 'wood' in world.goods: world.settlements['B'].add_to_storage(world.goods['wood'], quantity=30, tick=-1)
+
         if 'iron_ore' in world.goods: world.settlements['C'].add_to_storage(world.goods['iron_ore'], quantity=10, tick=-1)
+
         if 'wood' in world.goods: world.settlements['D'].add_to_storage(world.goods['wood'], quantity=10, tick=-1)
         if 'iron_ore' in world.goods: world.settlements['D'].add_to_storage(world.goods['iron_ore'], quantity=5, tick=-1)
+
         if 'grain' in world.goods: world.settlements['E'].add_to_storage(world.goods['grain'], quantity=100, tick=-1)
+
+        if 'bread' in world.goods: world.settlements['A'].add_to_storage(world.goods['bread'], quantity=500, tick=-1)
+        if 'bread' in world.goods: world.settlements['B'].add_to_storage(world.goods['bread'], quantity=500, tick=-1)
+        if 'bread' in world.goods: world.settlements['C'].add_to_storage(world.goods['bread'], quantity=500, tick=-1)
+        if 'bread' in world.goods: world.settlements['D'].add_to_storage(world.goods['bread'], quantity=500, tick=-1)
+        if 'bread' in world.goods: world.settlements['E'].add_to_storage(world.goods['bread'], quantity=500, tick=-1)
     except KeyError as ke:
         print(f"ERROR: Could not add initial stock. Settlement or Good ID '{ke}' not found.")
         print("       Check settlement IDs in world_setup.py and good IDs in config.json.")

@@ -37,7 +37,7 @@ except ImportError:
 # --- Load UI Configuration ---
 DEFAULT_UI_PARAMS = {
     "tick_delay_ms": 1000,
-    "animation_frame_delay_ms": 33, # NEW: Target delay for animation frames (~30 FPS)
+    "animation_frame_delay_ms": 33,
     "trade_effect_duration_ms": 1200,
     "settlement_radius": 15,
     "trade_marker_radius": 4,
@@ -86,7 +86,6 @@ class SimulationUI:
 
         # --- Store Constants and Theme Info on Instance ---
         self.TICK_DELAY_MS = ui_params['tick_delay_ms']
-        # NEW: Animation frame delay
         self.ANIMATION_FRAME_DELAY_MS = ui_params.get('animation_frame_delay_ms', 33)
         self.TRADE_EFFECT_DURATION_MS = ui_params['trade_effect_duration_ms']
         self.SETTLEMENT_BASE_RADIUS = ui_params['settlement_base_radius']
@@ -111,16 +110,15 @@ class SimulationUI:
         # --- Simulation State ---
         print("Setting up world...")
         try:
-            # Calculate tick duration in seconds to pass to world setup
             self.tick_duration_sec = self.TICK_DELAY_MS / 1000.0
             if self.tick_duration_sec <= 0: self.tick_duration_sec = 1.0 # Safety
 
             self.world = setup_world(config_file="config.json",
                                      recipe_file="recipes.json",
-                                     tick_duration_sec=self.tick_duration_sec) # Pass duration
+                                     tick_duration_sec=self.tick_duration_sec)
 
             self.sorted_goods = sorted(self.world.goods.values(), key=lambda g: g.id)
-            self.settlements = sorted(self.world.get_all_settlements(), key=lambda s: s.id)
+            self.settlements = self.world.get_all_settlements(include_abandoned=True)
             self.settlement_coords = {s.id: (s.x, s.y, s.z) for s in self.settlements}
             self.good_colors = self._assign_good_colors()
             print("World setup complete.")
@@ -128,8 +126,8 @@ class SimulationUI:
             print(f"\n--- ERROR DURING WORLD SETUP ---"); print(e); traceback.print_exc(); self.root.quit(); return
 
         # --- UI Widget References ---
-        # (Keep existing widget references)
         self.settlements_tree = None; self.goods_tree = None; self.recipe_text = None; self.global_totals_tree = None
+        self.avg_prices_tree = None # Added reference for avg prices tree
         self.scrollable_canvas = None; self.scrollable_frame = None; self.canvas_frame_id = None
         self.settlement_widgets = {}
         self.map_canvas = None; self.settlement_canvas_items = {}
@@ -150,9 +148,13 @@ class SimulationUI:
         self.main_frame = ttk.Frame(root, padding="10")
         self.main_frame.grid(row=0, column=0, sticky="nsew")
         root.columnconfigure(0, weight=1); root.rowconfigure(0, weight=1)
-        self.main_frame.columnconfigure(0, weight=1, minsize=300) # Static pane
-        self.main_frame.columnconfigure(1, weight=4, minsize=600) # Dynamic/Map pane
-        self.main_frame.rowconfigure(1, weight=1)
+
+        # --- Adjust Column Weights ---
+        # Give less weight to the left static pane (column 0)
+        # Give more weight to the right dynamic/map pane (column 1)
+        self.main_frame.columnconfigure(0, weight=1, minsize=300) # Static pane (weight 1)
+        self.main_frame.columnconfigure(1, weight=6, minsize=600) # Dynamic/Map pane (weight 6)
+        self.main_frame.rowconfigure(1, weight=1) # Allow row 1 (content area) to expand vertically
 
         # --- Control Bar ---
         control_frame = ttk.Frame(self.main_frame)
@@ -222,7 +224,6 @@ class SimulationUI:
             self.pause_button.config(state=tk.DISABLED)
             self.start_button.config(state=tk.NORMAL)
             print("--- Simulation Paused ---")
-            # Note: Animation loop continues running even when paused
 
     def _start_sim(self):
         """Starts or resumes the simulation update loop."""
@@ -231,10 +232,9 @@ class SimulationUI:
             self.pause_button.config(state=tk.NORMAL)
             self.start_button.config(state=tk.DISABLED)
             print("--- Simulation Resumed ---")
-            # Reset target time when resuming to avoid large jump
             self.last_tick_time = time.perf_counter()
             self.next_tick_target_time = self.last_tick_time + self.tick_duration_sec
-            self.root.after(10, self.update_simulation) # Schedule immediate update
+            self.root.after(10, self.update_simulation)
 
     # --- Theme Application ---
     def _apply_theme(self):
@@ -278,7 +278,6 @@ class SimulationUI:
     def update_simulation(self):
         """Performs one tick of the simulation and calls UI update functions, aiming for a fixed timestep."""
         if not self.simulation_running:
-            # Still schedule the check even if paused, but don't advance target time
             self.root.after(100, self.update_simulation)
             return
         if not self.root.winfo_exists():
@@ -294,20 +293,19 @@ class SimulationUI:
 
             # --- UI Updates (Tick-Based) ---
             self.tick_label_var.set(f"Tick: {self.world.tick}")
-            self.settlements = sorted(self.world.get_all_settlements(), key=lambda s: s.id)
+            self.settlements = self.world.get_all_settlements(include_abandoned=True)
             self.settlement_coords = {s.id: (s.x, s.y, s.z) for s in self.settlements}
             self.sorted_goods = sorted(self.world.goods.values(), key=lambda g: g.id)
 
             ui_static_pane.update_static_pane(self)
             ui_dynamic_pane.update_dynamic_pane(self)
-            # Call the tick-based map update (settlement visuals, last trade label)
-            ui_map_pane.update_map_pane_tick_based(self) # MODIFIED CALL
+            ui_map_pane.update_map_pane_tick_based(self) # Tick-based updates only
             ui_analysis_window.update_analysis_window(self)
 
             # --- Scheduling Next Tick (Fixed Timestep Logic) ---
             processing_end_time = time.perf_counter()
             processing_time_sec = processing_end_time - self.last_tick_time
-            target_delay_sec = self.tick_duration_sec # Use stored duration
+            target_delay_sec = self.tick_duration_sec
 
             self.next_tick_target_time += target_delay_sec
             current_time_after_processing = time.perf_counter()
@@ -321,24 +319,21 @@ class SimulationUI:
             print(f"\n--- ERROR DURING SIMULATION/UPDATE (Tick {self.world.tick}) ---"); traceback.print_exc()
             if self.root.winfo_exists(): self.root.quit()
 
-    # --- NEW: Animation Update Loop ---
+    # --- Animation Update Loop ---
     def _update_animation_frame(self):
         """Handles smooth visual updates, like shipment marker movement."""
         if not self.root.winfo_exists():
-            # Stop loop if window is closed
+            return
+
+        if not self.simulation_running:
+            self.root.after(self.ANIMATION_FRAME_DELAY_MS, self._update_animation_frame)
             return
 
         try:
-            # Call the map pane function responsible for smooth updates
             ui_map_pane.update_shipment_marker_positions_smoothly(self)
-
-            # Reschedule the next animation frame
             self.root.after(self.ANIMATION_FRAME_DELAY_MS, self._update_animation_frame)
-
         except Exception as e:
             print(f"\n--- ERROR DURING ANIMATION FRAME UPDATE ---"); traceback.print_exc()
-            # Decide if you want to stop animation on error or just log and continue
-            # For now, let's try to continue
             if self.root.winfo_exists():
                  self.root.after(self.ANIMATION_FRAME_DELAY_MS, self._update_animation_frame)
 

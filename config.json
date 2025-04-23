@@ -1,37 +1,52 @@
 {
   "simulation_parameters": {
     "price_sensitivity": 0.5,
-    "storage_capacity_per_pop": 10.0,
-    "max_trades_per_tick": 200,
-    "labor_per_pop": 0.5,
     "trade_profit_margin_threshold": 1.05,
-    "settlement_default_initial_wealth": 5000,
+
+    "max_trades_per_tick": 200,
+
+    "storage_capacity_per_pop": 10.0,
+    "labor_per_pop": 0.5,
+
+    "settlement_default_initial_wealth": 1000,
+
     "base_consumption_rate": 0.1,
     "max_production_passes": 5,
+
     "min_price_multiplier": 0.1,
     "max_price_multiplier": 10.0,
+
     "city_population_threshold": 150,
     "city_storage_multiplier": 1.5,
     "storage_cost_per_unit": 0.01,
     "production_wealth_buffer": 10.0,
-    "abandonment_wealth_threshold": -100,
-    "abandonment_ticks_threshold": 15,
+    
     "migration_check_interval": 5,
     "migration_wealth_threshold": 0,
     "migration_target_min_wealth": 600,
     "migration_max_percentage": 0.1,
+
     "base_trade_capacity": 5,
     "market_upgrade_fail_trigger": 5,
     "min_trade_qty": 0.01,
+
     "settlement_log_max_length": 10,
     "world_trade_log_max_length": 10,
+
     "transport_cost_per_distance_unit": 0.0005,
     "max_trade_cost_wealth_percentage": 0.25,
+
     "base_transport_speed": 50.0,
+
     "consumption_fulfillment_threshold": 0.9,
     "consumption_need_increase_factor": 1.1,
     "consumption_need_decrease_factor": 0.95,
-    "consumption_need_max_multiplier": 3.0
+    "consumption_need_max_multiplier": 3.0,
+
+    "food_abandonment_threshold": 0.5,
+    "food_abandonment_ticks": 20,
+    "abandonment_wealth_threshold": -100,
+    "abandonment_ticks_threshold": 15
   },
   "ui_parameters": {
     "tick_delay_ms": 1000,

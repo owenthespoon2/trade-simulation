@@ -6,43 +6,45 @@ This project aims to prototype a data-driven simulation where a complex, large-s
 
 The initial concept originated from [link to your Obsidian note or brief description if not linkable]. The goal is to create a modular system suitable for potential future integration with broader ecosystem or civilization simulations, eventually featuring more detailed settlements and specialized AI agents. This Python prototype serves as a testbed for core mechanics before a potential future migration to a different engine (e.g., Unity DOTS).
 
-## Current Status (April 2025 - End of Phase 2.3.2 Implementation)
+## Current Status (April 2025 - End of Phase 2.6 Implementation)
 
 * **Configuration (`config.json`):**
-    * Core simulation parameters externalized (pricing, consumption, trade limits/logic, population thresholds, upkeep, migration, building costs/effects, min trade qty, log lengths, upgrade triggers, transport cost, max trade cost %, **dynamic needs factors/thresholds**, **production wealth buffer**, etc.).
-    * UI display parameters externalized (**shipment marker radius/offset**, **animation frame delay**, etc.).
-    * Goods definitions externalized (incl. **color**, **good\_type**).
+    * Core simulation parameters externalized (pricing, consumption, trade limits/logic, population thresholds, upkeep, migration, building costs/effects, min trade qty, log lengths, upgrade triggers, transport cost, max trade cost %, dynamic needs factors/thresholds, production wealth buffer, **food abandonment threshold/ticks**, etc.).
+    * UI display parameters externalized (shipment marker radius/offset, animation frame delay, etc.).
+    * Goods definitions externalized (incl. color, good\_type).
     * Building definitions section added (Market Level 2 defined).
-* **Recipes (`recipes.json`):** Externalized production recipes.
+* **Recipes (`recipes.json`):** Externalized production recipes. Updated Bread/Wood recipes.
 * **Core Logic (`trade_logic.py`):**
-    * Settlements with population, terrain, wealth, dynamic storage, labor pools, 3D coordinates.
+    * Settlements with population, terrain, wealth, dynamic storage, labor pools, 3D coordinates. Tracks **ticks below food/wealth thresholds**, **total trades completed**.
     * Market level tracked per settlement, calculating dynamic trade capacity.
     * Basic AI implemented for settlements to upgrade markets based on trade failures. Basic upgrade progress implemented.
-    * Goods loaded from config (incl. **color**, **good\_type**), supporting bulk/item tracking.
-    * Recipe-based production. **Production logic allows `FOOD` type goods below wealth buffer.**
-    * Population-driven consumption. **Consumption needs are now dynamic**, adjusting based on fulfillment ratio.
+    * Goods loaded from config (incl. color, good\_type), supporting bulk/item tracking.
+    * Recipe-based production. Production logic allows `FOOD` type goods below wealth buffer.
+    * Population-driven consumption. **Consumption needs are now dynamic**. **Bread prioritized** over Grain for all settlements.
     * Dynamic local price calculation (incorporates dynamic needs).
-    * Bulk trade execution based on price differentials, affordability, storage space, per-settlement trade capacity, transport costs, and max trade cost wealth percentage. Uses configurable `min_trade_qty`.
-    * **Trade duration implemented** (in-transit goods) with **precise timing** (departure/arrival seconds).
+    * Bulk trade execution based on price differentials, affordability, storage space, per-settlement trade capacity, transport costs, and max trade cost wealth percentage. Uses configurable `min_trade_qty`. **Increments trade counters.**
+    * Trade duration implemented (in-transit goods) with precise timing (departure/arrival seconds).
     * Storage upkeep costs.
-    * Settlement abandonment logic.
+    * **Refined settlement abandonment logic:** Triggers on low wealth OR prolonged food shortage. **Migrates population fully** upon abandonment; settlement object/goods persist initially.
     * Population migration logic based on wealth and 3D distance, with per-tick tracking.
-    * Global good total calculation method.
+    * **Global good total calculation includes in-transit goods.**
+    * **Global average price calculation method added.**
+    * **Global trade volume per good tracked.**
     * Improved commenting and code structure. Uses configurable log lengths.
 * **World Setup (`world_setup.py`):**
-    * Dynamically creates goods from config (incl. **color**, **good\_type**).
+    * Dynamically creates goods from config (incl. color, good\_type).
     * Sets up initial settlements with standardized population and wealth. Passes sim params and building defs.
-    * Passes **tick duration** to World object.
+    * Passes tick duration to World object.
     * Improved commenting and code structure.
 * **User Interface (Refactored into Modules):**
-    * Main application logic in `ui_main.py`.
+    * Main application logic in `ui_main.py`. **Column weights adjusted.** **Animation pauses when simulation paused.**
     * UI components organized into `ui_static_pane.py`, `ui_dynamic_pane.py`, `ui_map_pane.py`, `ui_analysis_window.py`.
     * Fullscreen Tkinter UI with dark mode (`sv_ttk` optional). Optimized performance.
-    * **Static Pane:** Displays Settlements list (updates pop.), Goods list, Recipe details, Global Goods Totals.
-    * **Settlement Details Tab:** Scrollable area with individual sections per settlement (showing basic stats, Inventory, Production This Tick, Market Level, Trade Capacity). Optimized updates & layout.
-    * **Map Tab:** Visualizes settlement locations (2D), name, ID, wealth (scaled size), city status (color). Displays last trade details. **Visualizes in-transit shipments** as color-coded, offset markers with **smooth animation** decoupled from tick rate. Includes goods legend.
-    * **Trade Analysis Window:** Pop-up window with tabs for Executed, Failed, Potential trades, and Migration events. Displays Transport Cost details. Optimized updates.
-    * Simulation starts correctly in a paused state. **Separate loops for simulation ticks and smooth animation.**
+    * **Static Pane:** Displays Settlements list (updates pop., indicates abandoned), Goods list, Recipe details, Global Goods Totals, **Global Average Prices**, **Global Trade Volume**. Fixed NameError crash.
+    * **Settlement Details Tab:** Scrollable area with individual sections per settlement (showing basic stats, Inventory, Production This Tick, Market Level, Trade Capacity, **Total Trades**, **Internal State (Needs>1.0, Food/Wealth Ticks)**). Optimized updates & layout.
+    * **Map Tab:** Visualizes settlement locations (2D), name, ID, wealth (scaled size), city status (color). Displays last trade details. Visualizes in-transit shipments as color-coded, offset markers with smooth animation decoupled from tick rate. Includes goods legend.
+    * **Trade Analysis Window:** Pop-up window with tabs for Executed, Failed, Potential trades, and Migration events. **Displays Price/Unit clearly.** **Default size reduced.** Optimized updates.
+    * Simulation starts correctly in a paused state. Separate loops for simulation ticks and smooth animation.
 
 ## Running the Simulation
 
@@ -61,40 +63,28 @@ The initial concept originated from [link to your Obsidian note or brief descrip
 * **Phase 0 - 2.1 (Logic & UI):** Initial setup, core logic implementation, UI creation, bulk trades, UI enhancements, refactoring, performance optimizations, Market building logic & config parameters, Market UI display - *Completed.*
 
 * **Phase 2: Core Economic Tuning, Trade Realism & Infrastructure**
-    * **2.2 (Trade Logistics & Visualization):**
-        * Implement Transport Costs - *Completed.*
-        * Add UI display for Transport Costs - *Completed.*
-        * Correct KeyError in map pane display - *Completed.*
-        * Correct trade viability check logic - *Completed.*
-        * Implement Max Trade Cost Wealth Percentage limit - *Completed.*
-        * Implement Trade Duration (in-transit goods) - *Completed.*
-        * **2.2c:** Visualize in-transit trades (Color-coding, Offsetting) - *Completed.*
-        * Implement **Smooth Shipment Animation** - *Completed.*
+    * **2.2 (Trade Logistics & Visualization):** - *Completed.*
     * **2.3 (Economic Balancing I):**
-        * **2.3.1:** Review/Refine Price Calculation Mechanism (Dynamic Needs) - *Completed.*
-        * **2.3.2:** Refine `production_wealth_buffer` Logic (Using `good_type`) - *Completed.*
-        * **2.3.3 (NEXT):** Address seed oversupply (Goods Decay?).
-        * **2.3.4:** Modify **Bread recipe** to require **Wood**.
-        * **2.3.5:** Modify **Wood recipe** to require **Tools**.
-        * **2.3.6:** Review/Fix **Tool** production/display issue.
-        * **2.3.7:** Implement **Abandonment due to Lack of Food**.
-        * **2.3.8:** General parameter tuning.
+        * **2.3.1-2.3.6:** Economic Logic & Abandonment Refinements - *Completed.*
     * **2.4 (Tick Timing Fix):** - *Completed.*
-    * **2.5 (UI Enhancements):** (To be done after 2.3.8)
-        * **2.5.1:** Add "Needs" visualization to Settlement Details tab (`ui_dynamic_pane.py`).
-        * **2.5.2:** Adjust main column weights for better layout (`ui_main.py`).
+    * **2.6 (Enhanced Data Display & Analysis UI):** - *Completed.*
+    * **2.3.7 (NEXT):** General parameter tuning.
 
 * **Phase 3: Storage, Wealth & Analysis**
     * **3.1:** Evaluate Storage Limits -> Implement **Storehouse Buildings** (if needed).
     * **3.2:** Implement **Detailed Data Export** feature.
-    * **3.3:** Economic Balancing II.
-    * **3.4:** Handle **Negative Wealth** more gracefully.
+    * **3.3:** Implement **Headless Mode** (CLI execution, run for N ticks, output summary/file).
+    * **3.4:** Economic Balancing II.
+    * **3.5:** Handle **Negative Wealth** more gracefully.
+    * **3.6:** Implement "Low Wealth" alerts/tracking similar to low food.
 
 * **Phase 4: UI/UX Overhaul**
     * **4.1:** Implement **Improved Map Visuals**.
     * **4.2:** Refactor **Recipe display** to pop-out window/separate tab instead of static pane.
     * **4.3:** Implement **Map-Linked Side Panel** for Settlement Details (replaces legend area on selection).
-    * **4.4:** General UI cleanup and improvements.
+    * **4.4:** Implement Good Distribution Percentage view (triggered by selecting a good).
+    * **4.5:** Relocate static pane tables (Settlements, Goods, Globals, Averages, Volume) to a dedicated tab or area (potentially the map side panel from 4.3).
+    * **4.6:** General UI cleanup and improvements.
 
 * **Phase 5: Towards Agent-Based Simulation**
     * **5.1:** Population Dynamics.
@@ -106,6 +96,8 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     * Explore more complex agent interactions.
     * Consider basic loan/debt mechanics.
     * Refine simulation based on balancing outcomes.
+    * **(Deferred):** Address seed oversupply (Goods Decay?).
+    * **(Deferred):** Make Wealth a physical good.
 
 ## Long-Term Vision (Post-Prototype / Unity Engine)
 

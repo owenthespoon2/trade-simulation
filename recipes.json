@@ -1,6 +1,6 @@
 {
   "wood": {
-    "inputs": {},
+    "inputs": {"tools": 0.05},
     "outputs": {"wood": 1.0},
     "labor": 3,
     "required_terrain": ["Forest", "Hills"],
@@ -34,11 +34,11 @@
     "required_terrain": null,
     "wealth_cost": 2
   },
-  "bread": { 
-    "inputs": {"grain": 1.0}, 
-    "outputs": {"bread": 2.0}, 
-    "labor": 1, 
-    "required_terrain": null, 
+  "bread": {
+    "inputs": {"grain": 1.0, "wood": 0.1},
+    "outputs": {"bread": 2.0},
+    "labor": 1,
+    "required_terrain": null,
     "wealth_cost": 0
   }
 }

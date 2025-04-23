@@ -16,7 +16,8 @@ def open_analysis_window(app):
 
     app.analysis_window = tk.Toplevel(app.root)
     app.analysis_window.title(f"Trade & Migration Analysis (Tick {app.world.tick})")
-    app.analysis_window.geometry("1150x700") # Increased width slightly for new columns
+    # --- Reduced default size ---
+    app.analysis_window.geometry("950x550") # Smaller default size
 
     try: # Basic theme background setting
         if app.SV_TTK_AVAILABLE: app.analysis_window.configure(bg=app.DARK_BG)
@@ -25,28 +26,25 @@ def open_analysis_window(app):
     app.analysis_window.rowconfigure(0, weight=1); app.analysis_window.columnconfigure(0, weight=1)
     notebook = ttk.Notebook(app.analysis_window); notebook.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-    # Define Tabs and Columns (Updated with Transport Costs)
+    # --- Define Tabs and Columns ---
     exec_frame = ttk.Frame(notebook, padding=5); notebook.add(exec_frame, text="Executed Trades")
     exec_frame.rowconfigure(0, weight=1); exec_frame.columnconfigure(0, weight=1)
-    # Added 'Total TCost'
-    exec_cols = ('From', 'To', 'Good', 'Qty', 'Sell P', 'Buy P', 'Profit/U', 'Goods Val', 'Total TCost')
+    exec_cols = ('From', 'To', 'Good', 'Qty', 'Price/Unit', 'Buy P', 'Profit/U', 'Goods Val', 'Total TCost')
     app.analysis_tree_executed = _create_analysis_treeview(exec_frame, exec_cols, app)
 
     fail_frame = ttk.Frame(notebook, padding=5); notebook.add(fail_frame, text="Failed Executions")
     fail_frame.rowconfigure(0, weight=1); fail_frame.columnconfigure(0, weight=1)
-    # Added 'TCost/U'
     fail_cols = ('From', 'To', 'Good', 'Sell P', 'Buy P', 'Profit/U', 'TCost/U', 'Avail Q', 'Pot Q', 'Reason')
     app.analysis_tree_failed = _create_analysis_treeview(fail_frame, fail_cols, app)
 
     pot_frame = ttk.Frame(notebook, padding=5); notebook.add(pot_frame, text="Viable Potential Trades")
     pot_frame.rowconfigure(0, weight=1); pot_frame.columnconfigure(0, weight=1)
-    # Added 'TCost/U'
     pot_cols = ('From', 'To', 'Good', 'Sell P', 'Buy P', 'Profit/U', 'TCost/U', 'Avail Q', 'Pot Q')
     app.analysis_tree_potential = _create_analysis_treeview(pot_frame, pot_cols, app)
 
     mig_frame = ttk.Frame(notebook, padding=5); notebook.add(mig_frame, text="Migration")
     mig_frame.rowconfigure(0, weight=1); mig_frame.columnconfigure(0, weight=1)
-    mig_cols = ('Tick', 'From', 'To', 'Quantity')
+    mig_cols = ('Tick', 'From', 'To', 'Quantity', 'Reason')
     app.analysis_tree_migration = _create_analysis_treeview(mig_frame, mig_cols, app)
 
     update_analysis_window(app) # Populate with current data
@@ -60,27 +58,25 @@ def update_analysis_window(app):
     Args:
         app (SimulationUI): The main application instance.
     """
-    # <<< OPTIMIZATION: Only update if the window exists and is valid >>>
     if not app.analysis_window or not app.analysis_window.winfo_exists():
-        return # Do nothing if the window isn't open
+        return
 
-    # Update window title (safe even if called when window exists)
     app.analysis_window.title(f"Trade & Migration Analysis (Tick {app.world.tick})")
 
     # --- Update Executed Trades Tab ---
-    # Check each treeview exists before updating
     if hasattr(app, 'analysis_tree_executed') and app.analysis_tree_executed and app.analysis_tree_executed.winfo_exists():
         app.analysis_tree_executed.delete(*app.analysis_tree_executed.get_children())
         for trade in app.world.executed_trade_details_this_tick:
-            # Fetch transport cost total, default to 0.0 if not present
             transport_cost_total = trade.get('transport_cost_total', 0.0)
             goods_value = trade['quantity'] * trade['seller_price']
             values = (
                 trade['seller_name'], trade['buyer_name'], trade['good_name'],
-                f"{trade['quantity']:.1f}", f"{trade['seller_price']:.2f}", f"{trade['buyer_price']:.2f}",
-                f"{trade['potential_profit_per_unit']:.2f}", # Show potential profit before transport
-                f"{goods_value:.1f}", # Show value of goods transferred
-                f"{transport_cost_total:.2f}" # Show total transport cost paid by buyer
+                f"{trade['quantity']:.1f}",
+                f"{trade['seller_price']:.2f}", # Price/Unit
+                f"{trade['buyer_price']:.2f}",
+                f"{trade.get('potential_profit_per_unit', 0.0):.2f}",
+                f"{goods_value:.1f}",
+                f"{transport_cost_total:.2f}"
             )
             try: app.analysis_tree_executed.insert("", tk.END, values=values)
             except Exception as e: print(f"Error inserting executed trade: {e}")
@@ -92,13 +88,12 @@ def update_analysis_window(app):
         for trade in sorted_failed:
              qty_avail_str = f"{trade.get('qty_avail', '?'):.1f}" if isinstance(trade.get('qty_avail'), (int,float)) else '?'
              pot_qty_str = f"{trade.get('potential_qty', '?'):.1f}" if isinstance(trade.get('potential_qty'), (int,float)) else '?'
-             # Fetch transport cost per unit
              transport_cost_unit = trade.get('transport_cost_per_unit', 0.0)
              values = (
                  trade['seller_name'], trade['buyer_name'], trade['good_name'],
                  f"{trade['seller_price']:.2f}", f"{trade['buyer_price']:.2f}",
-                 f"{trade.get('potential_profit_per_unit', 0.0):.2f}", # Show potential profit before transport
-                 f"{transport_cost_unit:.2f}", # Show transport cost per unit
+                 f"{trade.get('potential_profit_per_unit', 0.0):.2f}",
+                 f"{transport_cost_unit:.2f}",
                  qty_avail_str, pot_qty_str, trade.get('fail_reason', 'Unknown')
              )
              try: app.analysis_tree_failed.insert("", tk.END, values=values)
@@ -108,16 +103,14 @@ def update_analysis_window(app):
     if hasattr(app, 'analysis_tree_potential') and app.analysis_tree_potential and app.analysis_tree_potential.winfo_exists():
         app.analysis_tree_potential.delete(*app.analysis_tree_potential.get_children())
         viable_potential = [t for t in app.world.potential_trades_this_tick if t.get('is_viable_prelim', False)]
-        # Sort by potential profit (before transport cost)
         sorted_potential = sorted(viable_potential, key=lambda x: x['potential_profit_per_unit'], reverse=True)
         for trade in sorted_potential:
-            # Fetch transport cost per unit
             transport_cost_unit = trade.get('transport_cost_per_unit', 0.0)
             values = (
                 trade['seller_name'], trade['buyer_name'], trade['good_name'],
                 f"{trade['seller_price']:.2f}", f"{trade['buyer_price']:.2f}",
-                f"{trade['potential_profit_per_unit']:.2f}", # Show potential profit before transport
-                f"{transport_cost_unit:.2f}", # Show transport cost per unit
+                f"{trade['potential_profit_per_unit']:.2f}",
+                f"{transport_cost_unit:.2f}",
                 f"{trade['qty_avail']:.1f}", f"{trade['potential_qty']:.1f}"
             )
             try: app.analysis_tree_potential.insert("", tk.END, values=values)
@@ -127,7 +120,8 @@ def update_analysis_window(app):
     if hasattr(app, 'analysis_tree_migration') and app.analysis_tree_migration and app.analysis_tree_migration.winfo_exists():
         app.analysis_tree_migration.delete(*app.analysis_tree_migration.get_children())
         for migration in app.world.migration_details_this_tick:
-            values = (migration['tick'], migration['from_name'], migration['to_name'], migration['quantity'])
+            reason = migration.get('reason', 'Economic')
+            values = (migration['tick'], migration['from_name'], migration['to_name'], migration['quantity'], reason)
             try: app.analysis_tree_migration.insert("", tk.END, values=values)
             except Exception as e: print(f"Error inserting migration event: {e}")
 
@@ -143,14 +137,14 @@ def _create_analysis_treeview(parent, columns, app):
     tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
     for col in columns:
         anchor = tk.W; width = 90
-        # Adjust widths and anchors for existing and new columns
-        if col in ('Sell P', 'Buy P', 'Profit/U', 'Avail Q', 'Pot Q', 'Qty', 'Price', 'Goods Val', 'Quantity', 'Tick', 'TCost/U', 'Total TCost'):
-             anchor = tk.E; width=75 # Right align numerical/cost columns
+        if col in ('Price/Unit', 'Sell P', 'Buy P', 'Profit/U', 'Avail Q', 'Pot Q', 'Qty', 'Price', 'Goods Val', 'Quantity', 'Tick', 'TCost/U', 'Total TCost'):
+             anchor = tk.E; width=75
+        if col == 'Price/Unit': width = 70
         if col == 'Total TCost': width = 85
         if col == 'TCost/U': width = 70
         if col == 'Profit/U': width = 70
         if col == 'Goods Val': width = 80
-        if col == 'Reason': width = 250; anchor=tk.W # Keep reason left-aligned and wide
+        if col == 'Reason': width = 150; anchor=tk.W # Reduced width slightly
         if col == 'Good': width = 80
         if col == 'From' or col == 'To': width = 100
         tree.heading(col, text=col, command=lambda c=col: _sort_treeview_column(tree, c, False, app))
@@ -159,29 +153,25 @@ def _create_analysis_treeview(parent, columns, app):
 
 def _sort_treeview_column(tv, col, reverse, app):
     """Sorts a Treeview column."""
-    # Check if treeview exists before proceeding
     if not tv.winfo_exists(): return
     try:
         l = [];
         for k in tv.get_children(''):
             val = tv.set(k, col)
-            try: l.append((float(val), k)) # Try converting to float for numerical sort
-            except ValueError: l.append((str(val).lower(), k)) # Fallback to case-insensitive string sort
+            try: l.append((float(val), k))
+            except ValueError: l.append((str(val).lower(), k))
         l.sort(key=lambda t: t[0], reverse=reverse)
         for index, (val, k) in enumerate(l): tv.move(k, '', index)
         tv.heading(col, command=lambda c=col: _sort_treeview_column(tv, c, not reverse, app))
     except Exception as e:
         print(f"Error sorting treeview column {col}: {e}")
-        # traceback.print_exc() # Optional detailed traceback
 
 def _on_analysis_window_close(app):
     """Callback function when the analysis window is closed."""
     if app.analysis_window:
         app.analysis_window.destroy()
         app.analysis_window = None
-        # Clear references to treeviews within the closed window
         app.analysis_tree_potential = None
         app.analysis_tree_failed = None
         app.analysis_tree_executed = None
         app.analysis_tree_migration = None
-
