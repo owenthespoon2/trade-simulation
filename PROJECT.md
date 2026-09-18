@@ -1,6 +1,6 @@
 # Trade Simulation: project file
 
-*Last updated: 18 September 2026*
+*Last updated: 19 September 2026*
 
 **Read this first when you come back.** The top section says what we're doing and what's next. Everything below it is background. It gets updated at the end of every session.
 
@@ -8,31 +8,27 @@
 
 # 📍 NOW
 
-**Focus:** understand the Python prototype, then start the TypeScript rewrite with a tiny three-town version.
+**Focus:** work out the **world formula**, the maths that gives the height of the land at any point, one layer at a time, understanding each part before moving on.
 
 **Where things stand:**
-- The Python prototype is **finished and frozen** at the git tag `python-prototype`.
-- Money is now conserved, but settlements still starve around tick 100 (see [what we learned](#-what-the-python-prototype-taught-us)).
-- Notes explaining every Python file are in [`notes/`](notes/README.md).
+- The **[world design](#-the-world) is confirmed**: a 200 × 200 km world described by a formula, with a central lake, hills to the north, forest to the west, the sea to the south, and one straight river running north to south through the lake.
+- The Python prototype is **finished and frozen** at the git tag `python-prototype`. Notes on every file are in [`notes/`](notes/README.md).
 
 ## Next steps
 
 | # | Step | Who | Status |
 |---|---|---|---|
-| 1 | **Read the notes**, starting with [`trade_logic.md`](notes/trade_logic.md). Run headless mode alongside | You | ▶ next |
-| 2 | **Confirm or tweak the [three-town design](#-the-three-town-world-draft)** | You | waiting |
-| 3 | **Barebones TypeScript version** in a `ts/` folder: three towns produce and eat, one printed line per tick. No prices, no trade. About 100 lines. (Node.js v23 is already installed) | Claude writes, you read | after 1–2 |
-| 4 | **Add prices** to it | You, with help | later |
-| 5 | **Add trade** between towns | You, with help | later |
-
-**Expected result of step 3:** without trade, Hillfort starves straight away (it has no food), and Farmstead and Woodhaven starve once their starting tools wear out. That shows every town needs trade.
+| 1 | **Design the [world formula](#the-formula) together**, layer by layer. Layer 1 (the big shape) is done. **Layer 2 (noise) is in progress**: pick up from "Where we stopped" in [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped). Then rivers, then terrain | Together | ▶ now |
+| 2 | **Build step 3a** in TypeScript: the formula, plus a page that draws the map. (Node.js v23 is already installed) | Together | after 1 |
+| 3 | **Step 3b**: three towns as patches of 1-hectare tiles around the lake | Together | later |
+| 4 | **Step 3c**: produce and eat, with the three-town numbers redone for fish and land | Together | later |
+| — | Read the [notes](notes/README.md) on the Python code, whenever you have time | You | ongoing |
 
 ## Resume quickly
 
-```bash
-git pull
-python ui_main.py --headless --ticks 200 --print_interval 20
-```
+1. In `C:\Projects\trade-system-prototype`, run `git pull`.
+2. Read **"Where we stopped"** at the bottom of [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped).
+3. Tell Claude where to continue. It can rebuild the interactive map and noise explorers if they're not in the chat.
 
 ---
 
@@ -46,6 +42,116 @@ python ui_main.py --headless --ticks 200 --print_interval 20
 | 18 Sep 2026 | **Each town has its own kind of food** (grain, meat), and one has none | More realistic than one food town, and still forces trade |
 | 18 Sep 2026 | **Python kept as reference**, frozen at tag `python-prototype` | Read it when stuck, don't copy from it |
 | 18 Sep 2026 | **Every piece of work gets its own branch and PR** | Keeps `main` working, and shows what changed and why |
+| 19 Sep 2026 | **Terrain belongs to the world, not the settlement.** Settlements sit at real positions on a map | So caravans travel across real land, and where a town sits decides what it can make |
+| 19 Sep 2026 | **The land is a formula**: height at any (x, y) is calculated, not stored. Only changes (fields, roads, flattened ground) are stored, on top | No fixed tile size, so detail is free and any point can be found with maths |
+| 19 Sep 2026 | **Height first**, and terrain worked out from it | Needed for farms on flat ground, and later for rivers and rain |
+| 19 Sep 2026 | **1 unit = 1 km, 1 tick = 1 day**, world 200 × 200 km with (0, 0) in the centre | Every number means something you can sanity-check |
+| 19 Sep 2026 | **Settlements are patches of 1-hectare land tiles** (town, fields), with a **work area** within walking distance | Settlements look like settlements, and land limits food instead of an arbitrary setting |
+| 19 Sep 2026 | **Caravans plan with A\* on a 1 km grid, and remember routes** once used a set number of times | A* on a fine grid would be too slow; remembered routes scale |
+| 19 Sep 2026 | **Fishing and boats exist**, added at step 7 after trade works | One system at a time |
+| 19 Sep 2026 | **The numbers are the truth; pictures are drawn from them** | So a zoomed-in view (houses, market square, roads) can come later without rewriting the simulation |
+| 19 Sep 2026 | **Hills and mountains to the north; one straight river along x = 0**, from the hills into the lake and on to the sea | Flat lowlands around the lake and to the sea, with the real height in the north. One straight river is simple to carve |
+| 19 Sep 2026 | **Layer 1 numbers:** lake about a day's walk across, north edge about 840 m, coast at y = −80, 1 m per km slope | A day's walk suits trade; hills of that size look big from afar |
+| 19 Sep 2026 | **Hillfort sits at the foot of the hills**, a little back from the shore | Hills (and later mines) within its work area |
+
+---
+
+# 🌍 The world
+
+*Confirmed 19 September 2026 (hills moved to the north the same day). Layer 1 of the formula is settled; the rest is being worked out.*
+
+**A 200 × 200 km world, described by a formula.** (0, 0) is the centre, x runs west → east, y runs south → north, 1 unit = 1 km, and 1 tick = 1 day.
+
+### Layout
+
+Sketch, not to scale:
+
+```
+ N ↑   ^ ^ ^ ^ ^ ^ ^ ^ ≈ ^ ^ ^ ^ ^ ^ ^ ^    mountains, continuing off the map
+       n n n n n n n n ≈ n n n n n n n n    hills
+       T T T T T . . H ≈ . . . . . . . .    H Hillfort: at the foot of the hills, by River 1
+       T T T T . . . ~ ~ ~ . . . . . . .
+       T T T W ~ ~ ~ ~ ~ ~ ~ . . . . . .    W Woodhaven: west shore, in the forest
+       T T T . . ~ ~ ~ ~ ~ . . . . . . .
+       T T . . . . . F ≈ . . . . . . . .    F Farmstead: south shore, at the outlet
+       . . . . . . . . ≈ . . . . . . . .
+       . . . . . . . . ≈ . . . . . . . .    flat farmland, sloping gently south
+       ~ ~ ~ ~ ~ ~ ~ ~ ≈ ~ ~ ~ ~ ~ ~ ~ ~    sea
+
+       T forest   . grassland   n hills   ^ mountains   ~ water   ≈ river
+```
+
+- **North:** hills rising into a mountain range that continues beyond the map. The north edge is about 840 m high (Yahiko is 634 m).
+- **River 1** comes down from the northern hills and runs straight south along x = 0 into the lake.
+- **Centre:** the lake, about 28 km from shore to shore, so about a day's walk. That's roughly Lake Biwa's width.
+- **River 2** drains the lake straight south along x = 0 to the sea. Lakes with an inflow need an outflow, or they turn salty, and it links the lake to the sea for boats.
+- **South:** flat farmland sloping gently (1 m per km) to the sea, with the coast at y = −80.
+- **West and north-west:** forest. **East:** open farmland, room to grow.
+- **Towns:** Hillfort at the foot of the hills north of the lake, by River 1 (mines later); Woodhaven on the west shore in the forest; Farmstead on the south shore at the outlet.
+
+### The formula
+
+Built in layers, each understood before the next:
+
+| Layer | What | Status |
+|---|---|---|
+| 0 | Units: height in metres, sea level 0 m, below 0 is underwater | ✅ |
+| 1 | The big shape: slope to the sea, northern hills, lake dip | ✅ settled 19 Sep |
+| 2 | Noise: natural bumps; the coast and lake shore wiggle automatically | ▶ next |
+| 3 | Rivers: two grooves along x = 0 whose beds always run downhill | |
+| 4 | Terrain from height, slope and a forest map | |
+
+**Layer 1:**
+
+```
+height(x, y) = plain(y) + hills(y) − lakeDip(x, y)
+
+plain(y)    = 1 × (y + 80)                     rises 1 m per km north; coast at y = −80
+hills(y)    = 1500 × smoothstep(15, 200, y)    starts at y = 15, peaks off the map at y = 200
+lakeDip     = 63 × (1 − smoothstep(0, 20, r))  r = √(x² + y²), distance from the centre
+
+smoothstep(a, b, v): t = (v − a) / (b − a), kept between 0 and 1; result = t × t × (3 − 2t)
+```
+
+- The lake fills its dip until it spills over the lowest point of the rim. Because the land slopes south, that point is on the south side, exactly where River 2 leaves.
+- The lake surface is at about 60 m and the lake is about 44 m deep.
+- A lake only forms if the dip is deeper than slope × radius (63 m against 1 × 20 = 20 m).
+
+### Detail: each part uses what it needs
+
+Because the land is a formula, there's no single tile size. Only *changes* to the land are stored, where they happen:
+
+> actual height = formula height + changes
+
+| Part | Detail |
+|---|---|
+| Land shape (height, terrain) | The formula: any detail, nothing stored |
+| Land use: town, fields, roads | 100 m tiles (1 hectare), stored only around settlements. A 100-person village is ~100 field tiles plus a few town tiles |
+| Houses, market square | ~10 m, in a zoomed-in settlement view (later) |
+| Route planning (A*) | 1 km grid |
+| Water flowing, rain (later) | A coarse grid |
+| Map viewer | Whatever the screen needs |
+
+**Rivers:** the first two are *designed*, as channels cut into the formula. Rivers that *emerge* from rain need water flowing across the whole map, which is a grid simulation, so that comes later.
+
+### Settlements
+
+- A **patch of 1-hectare tiles**, each with a job: **town** or **field** (later also pasture, woodland, mine, road).
+- **Fields only on flat ground**; later, people can flatten land (terracing).
+- **Work area:** land within walking distance of the edge of town. Bigger towns reach further. When flat land in reach runs out, food stops growing: trade, or people leave to found a new town.
+- **The numbers are the truth; pictures are drawn from them.**
+
+### Caravans and routes
+
+1. **Plan coarse, walk fine:** A* on the 1 km grid (40,000 tiles). You'll write the A* yourself, starting on a 10×10 grid.
+2. **Remember routes:** after a set number of trips, a route becomes an **established trade route** and is followed without planning again, unless the land changes.
+3. **Routes become roads (later):** heavy use wears tracks into roads, roads are faster, and faster roads attract traffic.
+
+### Fishing, boats and the sea
+
+- **Fishing** from shore tiles, needs tools. The lake has a **shared fish stock that regrows slowly**, so overfishing collapses it.
+- **Boats** from wood and tools: lake fishing first, then river and coast trade.
+- **The outside world (later):** a port and foreign ships. Foreign traders carry their own money, so money entering the world is deliberate and counted.
 
 ---
 
@@ -93,9 +199,9 @@ More detail, including smaller problems: [`notes/trade_logic.md` § Known proble
 
 ---
 
-# 🏘 The three-town world (draft)
+# 🏘 The three-town economy (draft)
 
-*Not confirmed yet. Change anything.*
+*Draft from 18 Sep. The numbers get redone at step 3c. Towns now sit on the [world map](#-the-world), so what they can make comes from the land in their work area, not a terrain label. Fishing (step 7) will also give Hillfort some food of its own.*
 
 The rule that makes it work: **tools wear out.** Farming, hunting and chopping all use them up, which gives Hillfort a customer every tick. If tools lasted forever, it would sell a few and then starve.
 
@@ -139,15 +245,19 @@ The world eats 300 food and could make up to about 500. Every town both buys and
 
 | # | Step | Status |
 |---|---|---|
-| 1 | Design the three-town world on paper | ✅ draft done, needs your OK |
-| 2 | Pick the language | ✅ TypeScript |
-| 3 | Towns produce and eat. No prices, no trade | next |
+| 1 | Pick the language | ✅ TypeScript |
+| 2 | Three-town economy design | ✅ draft (numbers redone at 3c) |
+| — | World design | ✅ confirmed 19 Sep |
+| 3a | **World formula:** height, lake, hills, forest, sea, the two rivers, plus a map viewer page | ▶ designing the maths |
+| 3b | **Towns** as patches of 1-hectare town and field tiles, with work areas | |
+| 3c | **Produce and eat.** No prices, no trade | |
 | 4 | Prices, with recipe inputs and firewood counting as demand | |
-| 5 | Trade between towns, money conserved. Aim: the success test above | |
-| 6 | **One trader cart** replaces direct trade | |
-| 7 | Switch systems back on one at a time; then a map; then the game | |
+| 5 | Trade between towns (straight-line travel time), money conserved. Aim: the success test above | |
+| 6 | **Caravans:** you write A*, one trader cart, routes remembered | |
+| 7 | **Fishing**, then **boats** | |
+| 8+ | Routes become roads · towns grow and claim land · rain and emergent rivers · terracing · mines in the hills by Hillfort · floating logs down rivers · sea trade with the outside world · zoomed-in settlement view · the game | later |
 
-**Nothing about graphics, multiplayer or Telegram until three towns run 1,000 ticks without dying.**
+**No game graphics, multiplayer or Telegram until three towns run 1,000 ticks without dying.** The map viewer from step 3a is a tool for checking the world, not the game.
 
 ---
 
@@ -254,6 +364,14 @@ Small, and understood. A new, tiny core that grows one piece at a time, with eve
 ---
 
 # 📓 Session log
+
+### 19 September 2026
+- Decided settlements should sit on a real map, with terrain belonging to the world.
+- **Confirmed the world design**: 200 × 200 km formula world, central lake, eastern hills, north-western forest, sea to the south, one river into the lake and one out to the sea.
+- Settlements become patches of 1-hectare tiles with work areas. Caravans plan with A* on a 1 km grid and remember routes. Fishing and boats come at step 7.
+- Started the world formula. **Layer 1 settled**: hills moved to the north, one straight river along x = 0, lake about a day's walk across, north edge about 840 m.
+- **Layer 2 (noise) started:** the hash (repeatable randomness), white noise, value noise, octaves, and why Perlin and simplex exist. Worked through the 1D blend by hand. Notes in [`notes/world-formula.md`](notes/world-formula.md).
+- Stopped at 1am. Next: value noise step by step (2D, octaves), then Perlin and simplex, then noise on our map.
 
 ### 18 September 2026
 - Measured the wealth drain: transport 55%, upkeep 34%, tool fee 11%. **Made money a conserved currency** (PR #1).

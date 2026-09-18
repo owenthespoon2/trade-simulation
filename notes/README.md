@@ -1,10 +1,18 @@
-# Notes on the Python prototype
+# Notes
+
+## The new world
+
+| Note | What it is |
+|---|---|
+| [world-formula.md](world-formula.md) | ⭐ The maths behind the world, layer by layer, as we learn it. Ends with **where we stopped** |
+
+## The Python prototype
 
 These notes explain how the Python prototype works, one file at a time. They're written for learning: to understand the code well enough to rebuild the important parts in TypeScript yourself.
 
 The Python code is frozen at the git tag `python-prototype`. For what we're working on now, see [`PROJECT.md`](../PROJECT.md).
 
-## Reading order
+### Reading order
 
 | # | Note | File(s) | What it is |
 |---|---|---|---|
@@ -19,7 +27,7 @@ Tip: keep the headless mode running in a terminal while you read, so you can see
 python ui_main.py --headless --ticks 200 --print_interval 20
 ```
 
-## How the files fit together
+### How the files fit together
 
 ```
 ui_main.py            ← you run this
@@ -33,7 +41,7 @@ ui_main.py            ← you run this
 
 The key idea: **`trade_logic.py` knows nothing about windows or printing.** It only holds the world and advances it one tick at a time. Everything else just builds the world or displays it. That separation is the most valuable thing to carry into TypeScript.
 
-## Words used in the notes
+### Words used in the notes
 
 | Word | Meaning |
 |---|---|
