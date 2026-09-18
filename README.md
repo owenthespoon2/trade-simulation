@@ -57,7 +57,11 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     ```bash
     python ui_main.py
     ```
-    Or, once implemented, run headless mode (details TBD in Phase 3).
+    Or run headless (no window) for a set number of ticks, printing a summary every 50 ticks:
+    ```bash
+    python ui_main.py --headless --ticks 500 --print_interval 50
+    ```
+    Other options: `--mode continuous --delay 1.0` (real-time), `--output FILE` (write the final summary), `--no-clear` (don't clear the screen between summaries), `--config` / `--recipes` (use other files).
 
 ## Development Plan & Future Goals (Python Prototype)
 
@@ -72,7 +76,7 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     * *(Note: Phase 2.3.7 General Parameter Tuning moved to Phase 5)*
 
 * **Phase 3: Headless/Console Mode Implementation (Performance Focus)**
-    * **3.1 (NEXT):** Implement **Headless/Console Mode**:
+    * **3.1:** Implement **Headless/Console Mode** - *Completed (`python ui_main.py --headless`).*
         * **Goal:** Create a fast-running version of the simulation without the graphical overhead of Tkinter, enabling quicker testing, balancing, and long-term runs. The console output should provide essential information, potentially mimicking Dwarf Fortress ASCII style. The Tkinter UI becomes a secondary tool for detailed visual inspection when needed.
         * **Tasks:**
             * Add CLI arguments (`argparse`) to `ui_main.py` or create a new script (`run_headless.py`) to enable non-GUI execution.

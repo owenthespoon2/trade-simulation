@@ -12,18 +12,19 @@ import math # Ensure math is imported for ceil
 # ==============================================================================
 # - Data Structures (Good, ItemInstance) : Line 26
 # - Settlement Class                      : Line 74
-# - Region Class                          : Line 420
-# - Civilization Class                    : Line 426
-# - World Class                           : Line 432
-#   - __init__                            : Line 434 (Initializes global_trade_counts)
-#   - Entity Management (add/get)         : Line 463
-#   - get_global_good_totals              : Line 471
-#   - get_global_average_prices           : Line 487
-#   - find_trade_opportunities            : Line 503
-#   - execute_trades                      : Line 560 (Increments global_trade_counts)
-#   - _calculate_distance                 : Line 718
-#   - _handle_final_migration             : Line 722
-#   - simulation_step                     : Line 768
+#   - add_to_storage                      : Line 179 (Warning commented out)
+# - Region Class                          : Line 424
+# - Civilization Class                    : Line 430
+# - World Class                           : Line 436
+#   - __init__                            : Line 438 (Initializes global_trade_counts)
+#   - Entity Management (add/get)         : Line 467
+#   - get_global_good_totals              : Line 475
+#   - get_global_average_prices           : Line 491
+#   - find_trade_opportunities            : Line 507
+#   - execute_trades                      : Line 564 (Increments global_trade_counts)
+#   - _calculate_distance                 : Line 722
+#   - _handle_final_migration             : Line 726
+#   - simulation_step                     : Line 772
 # ==============================================================================
 
 
@@ -210,7 +211,8 @@ class Settlement:
                 if good.is_bulk:
                     self.bulk_storage[good.id] += amount_to_add
                 else:
-                    print(f"WARN T{tick}: Adding non-bulk {good.id} as quantity to {self.id}, creating new instance.")
+                    # Suppress the warning as requested
+                    # print(f"WARN T{tick}: Adding non-bulk {good.id} as quantity to {self.id}, creating new instance.")
                     self.item_storage[good.id].append(ItemInstance(good.id, self.id, quantity=amount_to_add))
                 added_qty = amount_to_add
         return added_qty
