@@ -18,7 +18,7 @@
 
 | # | Step | Who | Status |
 |---|---|---|---|
-| 1 | **Design the [world formula](#the-formula) together**, layer by layer. Layer 1 (the big shape) is done; **Layer 2 (noise)** is next, then rivers, then terrain | Together | ▶ now |
+| 1 | **Design the [world formula](#the-formula) together**, layer by layer. Layer 1 (the big shape) is done. **Layer 2 (noise) is in progress**: pick up from "Where we stopped" in [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped). Then rivers, then terrain | Together | ▶ now |
 | 2 | **Build step 3a** in TypeScript: the formula, plus a page that draws the map. (Node.js v23 is already installed) | Together | after 1 |
 | 3 | **Step 3b**: three towns as patches of 1-hectare tiles around the lake | Together | later |
 | 4 | **Step 3c**: produce and eat, with the three-town numbers redone for fish and land | Together | later |
@@ -26,10 +26,9 @@
 
 ## Resume quickly
 
-```bash
-git pull
-python ui_main.py --headless --ticks 200 --print_interval 20
-```
+1. In `C:\Projects\trade-system-prototype`, run `git pull`.
+2. Read **"Where we stopped"** at the bottom of [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped).
+3. Tell Claude where to continue. It can rebuild the interactive map and noise explorers if they're not in the chat.
 
 ---
 
@@ -371,7 +370,8 @@ Small, and understood. A new, tiny core that grows one piece at a time, with eve
 - **Confirmed the world design**: 200 × 200 km formula world, central lake, eastern hills, north-western forest, sea to the south, one river into the lake and one out to the sea.
 - Settlements become patches of 1-hectare tiles with work areas. Caravans plan with A* on a 1 km grid and remember routes. Fishing and boats come at step 7.
 - Started the world formula. **Layer 1 settled**: hills moved to the north, one straight river along x = 0, lake about a day's walk across, north edge about 840 m.
-- Next: Layer 2, noise.
+- **Layer 2 (noise) started:** the hash (repeatable randomness), white noise, value noise, octaves, and why Perlin and simplex exist. Worked through the 1D blend by hand. Notes in [`notes/world-formula.md`](notes/world-formula.md).
+- Stopped at 1am. Next: value noise step by step (2D, octaves), then Perlin and simplex, then noise on our map.
 
 ### 18 September 2026
 - Measured the wealth drain: transport 55%, upkeep 34%, tool fee 11%. **Made money a conserved currency** (PR #1).
