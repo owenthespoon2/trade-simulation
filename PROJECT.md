@@ -12,7 +12,7 @@
 
 **Where things stand:**
 - The **[world design](#-the-world) is confirmed**: a 200 × 200 km world described by a formula, with a central lake, hills to the north, forest to the west, the sea to the south, and one straight river running north to south through the lake.
-- The Python prototype is **finished and frozen** at the git tag `python-prototype`. Notes on every file are in [`notes/`](notes/README.md).
+- The Python prototype is **finished and frozen** at the git tag `python-prototype`, and archived with its notes in [`archive/python-prototype/`](archive/python-prototype/README.md).
 
 ## Next steps
 
@@ -22,7 +22,6 @@
 | 2 | **Build step 3a** in TypeScript: the formula, plus a page that draws the map. (Node.js v23 is already installed) | Together | after 1 |
 | 3 | **Step 3b**: three towns as patches of 1-hectare tiles around the lake | Together | later |
 | 4 | **Step 3c**: produce and eat, with the three-town numbers redone for fish and land | Together | later |
-| — | Read the [notes](notes/README.md) on the Python code, whenever you have time | You | ongoing |
 
 ## Resume quickly
 
@@ -53,6 +52,7 @@
 | 19 Sep 2026 | **Hills and mountains to the north; one straight river along x = 0**, from the hills into the lake and on to the sea | Flat lowlands around the lake and to the sea, with the real height in the north. One straight river is simple to carve |
 | 19 Sep 2026 | **Layer 1 numbers:** lake about a day's walk across, north edge about 840 m, coast at y = −80, 1 m per km slope | A day's walk suits trade; hills of that size look big from afar |
 | 19 Sep 2026 | **Hillfort sits at the foot of the hills**, a little back from the shore | Hills (and later mines) within its work area |
+| 19 Sep 2026 | **Python code and notes archived** in `archive/python-prototype/` | Keep the repo focused on the new world; the lessons live on in this file |
 
 ---
 
@@ -193,7 +193,7 @@ Once there's enough food, all 5,000 wealth ends up in the grain town, and the ot
 4. **Demand must include recipe inputs**, not just food.
 5. **Measure before fixing.** Printing one number (total wealth per tick) settled a week of guessing.
 
-More detail, including smaller problems: [`notes/trade_logic.md` § Known problems](notes/trade_logic.md#5-known-problems-summary).
+More detail, including smaller problems: [the archived `trade_logic.md` notes § Known problems](archive/python-prototype/notes/trade_logic.md#5-known-problems-summary).
 
 **What success looks like for the new version:** 1,000 ticks, nobody starves, total wealth flat, prices moving within a range instead of drifting. *Prices that move within a range are a working market; prices that drift are a broken one.*
 
@@ -263,11 +263,14 @@ The world eats 300 food and could make up to about 500. Every town both buys and
 
 # 🐍 The Python prototype (reference)
 
+**Archived in:** [`archive/python-prototype/`](archive/python-prototype/README.md), code and notes together (moved there on 19 Sep 2026).
+
 **Frozen at:** tag `python-prototype` (commit `9f031a7`). See it on GitHub via the branch dropdown → **Tags**, or locally with `git checkout python-prototype` (`git checkout main` to come back).
 
-**Run it:**
+**Run it** from inside its folder, because the code looks for `config.json` in the folder you run it from:
 
 ```bash
+cd archive/python-prototype
 python ui_main.py                                  # window
 python ui_main.py --headless --ticks 500           # text only
 ```
@@ -287,7 +290,7 @@ python ui_main.py --headless --ticks 500           # text only
 | Tkinter window: map with moving shipments, detail panels, trade analysis | ✅ |
 | Headless mode | ✅ PR #2 |
 
-**How it works:** [`notes/`](notes/README.md).
+**How it works:** [`archive/python-prototype/notes/`](archive/python-prototype/notes/README.md).
 
 ---
 
@@ -371,6 +374,7 @@ Small, and understood. A new, tiny core that grows one piece at a time, with eve
 - Settlements become patches of 1-hectare tiles with work areas. Caravans plan with A* on a 1 km grid and remember routes. Fishing and boats come at step 7.
 - Started the world formula. **Layer 1 settled**: hills moved to the north, one straight river along x = 0, lake about a day's walk across, north edge about 840 m.
 - **Layer 2 (noise) started:** the hash (repeatable randomness), white noise, value noise, octaves, and why Perlin and simplex exist. Worked through the 1D blend by hand. Notes in [`notes/world-formula.md`](notes/world-formula.md).
+- Moved the Python prototype and its notes into [`archive/python-prototype/`](archive/python-prototype/README.md), so the repo shows only the new work. New short root README.
 - Stopped at 1am. Next: value noise step by step (2D, octaves), then Perlin and simplex, then noise on our map.
 
 ### 18 September 2026
@@ -380,7 +384,7 @@ Small, and understood. A new, tiny core that grows one piece at a time, with eve
 - Set up the GitHub CLI; first pull requests.
 - **Rescued the April 2025 headless mode** from uncommitted changes (PR #2).
 - Tagged the finished Python version as `python-prototype`.
-- Wrote the [`notes/`](notes/README.md) on every Python file, and this project file (PR #3).
+- Wrote the [notes](archive/python-prototype/notes/README.md) on every Python file, and this project file (PR #3).
 
 ---
 
