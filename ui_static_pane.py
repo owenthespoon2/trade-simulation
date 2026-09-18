@@ -141,7 +141,6 @@ def _on_good_select(event, app):
         recipe = selected_good.recipe; recipe_str = f"** {selected_good.name} ({selected_good.id}) **\n"
         inputs_str = ", ".join([f"{qty} {gid}" for gid, qty in recipe['inputs'].items()]) if recipe['inputs'] else "None"; recipe_str += f"  Inputs: {inputs_str}\n"
         outputs_str = ", ".join([f"{qty} {gid}" for gid, qty in recipe['outputs'].items()]); recipe_str += f"  Outputs: {outputs_str}\n"; recipe_str += f"  Labor: {recipe['labor']:.1f}\n"
-        if recipe['wealth_cost'] > 0: recipe_str += f"  Wealth Cost: {recipe['wealth_cost']:.1f}\n"
         if recipe['required_terrain']: recipe_str += f"  Requires: {', '.join(recipe['required_terrain'])}\n"
         _update_recipe_display(app, recipe_str)
     elif selected_good: _update_recipe_display(app, f"** {selected_good.name} ({selected_good.id}) **\n\n(Not producible)")

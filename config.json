@@ -18,8 +18,6 @@
 
     "city_population_threshold": 150,
     "city_storage_multiplier": 1.5,
-    "storage_cost_per_unit": 0.01,
-    "production_wealth_buffer": 10.0,
     
     "migration_check_interval": 5,
     "migration_wealth_threshold": 0,
