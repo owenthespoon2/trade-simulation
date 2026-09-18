@@ -9,7 +9,7 @@ The initial concept originated from [link to your Obsidian note or brief descrip
 ## Current Status (April 2025 - End of Phase 2.6 Implementation)
 
 * **Configuration (`config.json`):**
-    * Core simulation parameters externalized (pricing, consumption, trade limits/logic, population thresholds, upkeep, migration, building costs/effects, min trade qty, log lengths, upgrade triggers, transport cost, max trade cost %, dynamic needs factors/thresholds, production wealth buffer, **food abandonment threshold/ticks**, etc.).
+    * Core simulation parameters externalized (pricing, consumption, trade limits/logic, population thresholds, migration, building costs/effects, min trade qty, log lengths, upgrade triggers, transport cost, max trade cost %, dynamic needs factors/thresholds, **food abandonment threshold/ticks**, etc.).
     * UI display parameters externalized (shipment marker radius/offset, animation frame delay, etc.).
     * Goods definitions externalized (incl. color, good_type).
     * Building definitions section added (Market Level 2 defined).
@@ -19,13 +19,13 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     * Market level tracked per settlement, calculating dynamic trade capacity.
     * Basic AI implemented for settlements to upgrade markets based on trade failures. Basic upgrade progress implemented.
     * Goods loaded from config (incl. color, good_type), supporting bulk/item tracking (currently abstract).
-    * Recipe-based production. Production logic allows `FOOD` type goods below wealth buffer.
+    * Recipe-based production. Production costs labor and input goods, never wealth.
     * Population-driven consumption. **Consumption needs are now dynamic**. **Bread prioritized** over Grain for all settlements.
     * Dynamic local price calculation (incorporates dynamic needs).
     * Bulk trade execution based on price differentials, affordability, storage space, per-settlement trade capacity, transport costs, and max trade cost wealth percentage. Uses configurable `min_trade_qty`. **Increments trade counters.**
     * Trade duration implemented (in-transit goods) with precise timing (departure/arrival seconds).
-    * Storage upkeep costs.
-    * **Refined settlement abandonment logic:** Triggers on low wealth OR prolonged food shortage. **Migrates population fully** upon abandonment; settlement object/goods persist initially.
+    * **Wealth is a conserved currency.** It is never created or destroyed after a settlement is founded, only moved between holders via `transfer_wealth()`. Buyers pay sellers the delivered price (goods + transport). `World.money_supply` records the total, and every tick warns if total wealth drifts from it.
+    * **Refined settlement abandonment logic:** Triggers on low wealth OR prolonged food shortage. **Migrates population and wealth fully** upon abandonment; settlement object/goods persist initially.
     * Population migration logic based on wealth and 3D distance, with per-tick tracking.
     * **Global good total calculation includes in-transit goods.**
     * **Global average price calculation method added.**

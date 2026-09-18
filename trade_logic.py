@@ -43,12 +43,12 @@ class Good:
         self.good_type = good_type # Store the good type (e.g., FOOD, RAW_MATERIAL)
         self.recipe = None
     def __repr__(self): return f"Good({self.name}, Type: {self.good_type})" # Updated repr
-    def add_recipe(self, inputs, outputs, labor, required_terrain=None, wealth_cost=0):
+    def add_recipe(self, inputs, outputs, labor, required_terrain=None):
         if not self.is_producible: print(f"WARN: Cannot add recipe to non-producible good: {self.name}"); return
         if not isinstance(inputs, dict): raise TypeError(f"Recipe inputs for {self.id} must be a dict")
         if not isinstance(outputs, dict): raise TypeError(f"Recipe outputs for {self.id} must be a dict")
         if not outputs: raise ValueError(f"Recipe for {self.id} must have outputs")
-        self.recipe = {'inputs': inputs, 'outputs': outputs, 'labor': float(labor), 'required_terrain': required_terrain, 'wealth_cost': float(wealth_cost)}
+        self.recipe = {'inputs': inputs, 'outputs': outputs, 'labor': float(labor), 'required_terrain': required_terrain}
 
 class ItemInstance:
     """Represents a specific instance of a non-bulk good."""
@@ -61,6 +61,20 @@ class ItemInstance:
         return (f"Item(ID: {self.instance_id[:4]}..., Good: {self.good_id}, "
                 f"Origin: {self.origin_settlement_id}, Loc: {self.current_location_settlement_id}, "
                 f"Qty: {self.quantity:.1f}{history_summary})")
+
+def transfer_wealth(payer, payee, amount):
+    """
+    Moves wealth from payer to payee. Wealth is a conserved currency: once a
+    settlement is founded with its starting wealth, money is never created or
+    destroyed, only handed from one holder to another. Every payment in the
+    simulation must go through here so it always has a recipient.
+    Raises if the payer can't cover it, since a negative balance with no
+    creditor would be money created from nothing.
+    """
+    if amount < 0: raise ValueError(f"Cannot transfer a negative amount ({amount})")
+    if amount > payer.wealth + 1e-6: raise ValueError(f"{payer.name} cannot pay {amount:.2f} (has {payer.wealth:.2f})")
+    payer.wealth -= amount
+    payee.wealth += amount
 
 # ==============================================================================
 # Settlement Class
@@ -104,7 +118,6 @@ class Settlement:
         self._labor_per_pop = float(self.params.get('labor_per_pop', 0.5))
         self._city_pop_threshold = int(self.params.get('city_population_threshold', 150))
         self._city_storage_multiplier = float(self.params.get('city_storage_multiplier', 1.5))
-        self._production_wealth_buffer = float(self.params.get('production_wealth_buffer', 0.0))
 
         # Load dynamic consumption parameters
         self._consumption_fulfillment_threshold = float(self.params.get('consumption_fulfillment_threshold', 0.9))
@@ -288,12 +301,11 @@ class Settlement:
     def produce(self, all_goods_dict, world_tick):
         """
         Attempts to produce goods, tracks produced amounts.
-        Allows FOOD production even if below wealth buffer.
+        Production costs labor and input goods, never wealth.
         """
         if self.is_abandoned or self.population <= 0: return
 
         max_production_passes = self.params.get('max_production_passes', 5)
-        production_wealth_buffer = self._production_wealth_buffer
         self.production_this_tick.clear()
         self.current_labor_pool = self.max_labor_pool
 
@@ -304,12 +316,9 @@ class Settlement:
             producible_items = list(producible_goods.items()); random.shuffle(producible_items)
 
             for good_id, good in producible_items:
-                is_below_buffer = self.wealth < production_wealth_buffer
-                if is_below_buffer and good.good_type != 'FOOD': continue
-
                 recipe = good.recipe
                 if recipe['required_terrain'] and self.terrain_type not in recipe['required_terrain']: continue
-                if self.current_labor_pool < recipe['labor'] or self.wealth < recipe['wealth_cost']: continue
+                if self.current_labor_pool < recipe['labor']: continue
 
                 inputs_available = True; required_inputs = recipe['inputs']
                 if required_inputs:
@@ -317,16 +326,16 @@ class Settlement:
                         if self.get_total_stored(input_good_id) < input_qty: inputs_available = False; break
                     if not inputs_available: continue
 
-                original_labor = self.current_labor_pool; original_wealth = self.wealth
+                original_labor = self.current_labor_pool
                 temp_input_storage_state = {}; temp_output_storage_state = {}
-                self.current_labor_pool -= recipe['labor']; self.wealth -= recipe['wealth_cost']
+                self.current_labor_pool -= recipe['labor']
                 inputs_consumed_successfully = True
                 if required_inputs:
                     for input_good_id, input_qty in required_inputs.items():
                         temp_input_storage_state[input_good_id] = self.get_total_stored(input_good_id)
                         removed_qty, _ = self.remove_from_storage(input_good_id, input_qty, tick=world_tick)
                         if removed_qty < input_qty * 0.999:
-                            inputs_consumed_successfully = False; self.current_labor_pool = original_labor; self.wealth = original_wealth
+                            inputs_consumed_successfully = False; self.current_labor_pool = original_labor
                             for gid, initial_qty in temp_input_storage_state.items():
                                  current_qty = self.get_total_stored(gid); qty_to_add_back = initial_qty - current_qty
                                  if qty_to_add_back > 1e-6: self.add_to_storage(all_goods_dict[gid], quantity=qty_to_add_back)
@@ -339,7 +348,7 @@ class Settlement:
                     added_qty = self.add_to_storage(output_good, quantity=output_qty, tick=world_tick)
                     actual_added_quantities[output_good_id] = added_qty
                     if added_qty < output_qty * 0.999:
-                        outputs_produced_successfully = False; self.current_labor_pool = original_labor; self.wealth = original_wealth
+                        outputs_produced_successfully = False; self.current_labor_pool = original_labor
                         for gid, initial_qty in temp_input_storage_state.items():
                              current_qty = self.get_total_stored(gid); qty_to_add_back = initial_qty - current_qty
                              if qty_to_add_back > 1e-6: self.add_to_storage(all_goods_dict[gid], quantity=qty_to_add_back)
@@ -488,6 +497,10 @@ class World:
         # NEW: Initialize global trade counts
         self.global_trade_counts = defaultdict(int)
 
+        # Total money in the world. Grows only when a settlement is founded with
+        # starting wealth; after that, trade just moves it around.
+        self.money_supply = 0.0
+
         print(f"World initialized. Transport Cost/Dist: {self.transport_cost_per_distance_unit}, "
               f"Max Trade % Wealth: {self.max_trade_cost_wealth_percentage:.2f}, "
               f"Transport Speed: {self.base_transport_speed}, "
@@ -495,7 +508,9 @@ class World:
 
     # --- Entity Management ---
     def add_good(self, good): self.goods[good.id] = good
-    def add_settlement(self, settlement): self.settlements[settlement.id] = settlement
+    def add_settlement(self, settlement):
+        self.settlements[settlement.id] = settlement
+        self.money_supply += settlement.wealth
     def add_region(self, region): self.regions[region.id] = region
     def add_civilization(self, civilization): self.civilizations[civilization.id] = civilization
     def get_all_settlements(self, include_abandoned=False):
@@ -506,6 +521,10 @@ class World:
             return [s for s in self.settlements.values() if not s.is_abandoned]
 
     # --- Global State Calculation ---
+    def get_total_wealth(self):
+        """Sums wealth held anywhere in the world, abandoned settlements included."""
+        return sum(s.wealth for s in self.settlements.values())
+
     def get_global_good_totals(self):
         """
         Calculates the total amount of each good across all active settlements
@@ -702,8 +721,9 @@ class World:
                 final_goods_cost = seller_price * removed_qty
                 final_transport_cost = transport_cost_per_unit * removed_qty
                 final_total_cost_buyer = final_goods_cost + final_transport_cost
-                seller_obj.wealth += final_goods_cost
-                buyer_obj.wealth -= final_total_cost_buyer
+                # Buyer pays the seller the delivered price (goods + haulage). The seller
+                # does the hauling for now; once trader agents exist, haulage goes to them.
+                transfer_wealth(buyer_obj, seller_obj, final_total_cost_buyer)
 
                 travel_ticks = max(1, math.ceil(distance / transport_speed))
                 arrival_tick = self.tick + travel_ticks
@@ -773,7 +793,10 @@ class World:
         best_target = min(potential_targets, key=lambda s: self._calculate_distance(abandoning_settlement, s))
 
         migrating_pop = abandoning_settlement.population
-        print(f"INFO: Migrating final {migrating_pop} population from {abandoning_settlement.name} to {best_target.name}.")
+        migrating_wealth = max(0.0, abandoning_settlement.wealth)
+        print(f"INFO: Migrating final {migrating_pop} population and {migrating_wealth:.1f} wealth from {abandoning_settlement.name} to {best_target.name}.")
+        # The leavers take their money with them, so it stays in circulation
+        transfer_wealth(abandoning_settlement, best_target, migrating_wealth)
         self.migration_details_this_tick.append({
             'tick': self.tick,
             'from_id': abandoning_settlement.id, 'from_name': abandoning_settlement.name,
@@ -839,12 +862,6 @@ class World:
         self.execute_trades(opportunities)
         # --- Upgrade Decision Phase ---
         for settlement in active_settlements: settlement.decide_upgrade(self.tick)
-        # --- Upkeep Phase ---
-        storage_cost_rate = self.params.get('storage_cost_per_unit', 0.0)
-        if storage_cost_rate > 0:
-            for settlement in active_settlements:
-                upkeep = settlement.get_current_storage_load() * storage_cost_rate
-                if upkeep > 0: settlement.wealth -= upkeep
 
         # --- Abandonment Check Phase ---
         settlement_ids_to_check = list(self.settlements.keys())
@@ -901,5 +918,12 @@ class World:
                                 'quantity': num_to_migrate, 'reason': 'Economic'
                             })
                             emigrant.update_derived_stats(); best_target.update_derived_stats()
+
+        # --- Money Conservation Check ---
+        # Wealth only moves between holders, so the total must always equal the money
+        # supply. If it drifts, some code path is creating or destroying money.
+        drift = self.get_total_wealth() - self.money_supply
+        if abs(drift) > 1e-6 * max(1.0, self.money_supply):
+            print(f"WARN T{self.tick}: Money not conserved! Total wealth has drifted {drift:+.4f} from the money supply ({self.money_supply:.1f}).")
 
 # --- NO Main Execution Block Here ---
