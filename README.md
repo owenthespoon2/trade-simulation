@@ -1,5 +1,7 @@
 # Emergent Trade Simulation Prototype
 
+> **Current status and plan: see [`PROJECT.md`](PROJECT.md).** This Python prototype is finished and frozen at the tag `python-prototype`; a TypeScript rewrite is next. Notes explaining how the Python code works are in [`notes/`](notes/README.md).
+
 ## Project Goal
 
 This project aims to prototype a data-driven simulation where a complex, large-scale trade network emerges between settlements based on local economic factors. Inspired by historical examples like the Silk Road and concepts from complex systems, the simulation models production, consumption, supply, demand, pricing, and logistics, eventually aiming for detailed item provenance tracking and emergent market dynamics.
@@ -61,7 +63,7 @@ The initial concept originated from [link to your Obsidian note or brief descrip
     ```bash
     python ui_main.py --headless --ticks 500 --print_interval 50
     ```
-    Other options: `--mode continuous --delay 1.0` (real-time), `--output FILE` (write the final summary), `--no-clear` (don't clear the screen between summaries), `--config` / `--recipes` (use other files).
+    Other options: `--mode continuous --delay 1.0` (real-time), `--output FILE` (accepted but not implemented yet), `--no-clear` (don't clear the screen between summaries), `--config` / `--recipes` (use other files).
 
 ## Development Plan & Future Goals (Python Prototype)
 
