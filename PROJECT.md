@@ -11,14 +11,14 @@
 **Focus:** work out the **world formula**, the maths that gives the height of the land at any point, one layer at a time, understanding each part before moving on.
 
 **Where things stand:**
-- The **[world design](#-the-world) is confirmed**: a 200 × 200 km world described by a formula, with a central lake, eastern hills, north-western forest, the sea to the south, and two rivers.
+- The **[world design](#-the-world) is confirmed**: a 200 × 200 km world described by a formula, with a central lake, hills to the north, forest to the west, the sea to the south, and one straight river running north to south through the lake.
 - The Python prototype is **finished and frozen** at the git tag `python-prototype`. Notes on every file are in [`notes/`](notes/README.md).
 
 ## Next steps
 
 | # | Step | Who | Status |
 |---|---|---|---|
-| 1 | **Design the world formula together**, layer by layer: big shape → natural bumps (noise) → rivers → terrain from height | Together | ▶ now |
+| 1 | **Design the [world formula](#the-formula) together**, layer by layer. Layer 1 (the big shape) is done; **Layer 2 (noise)** is next, then rivers, then terrain | Together | ▶ now |
 | 2 | **Build step 3a** in TypeScript: the formula, plus a page that draws the map. (Node.js v23 is already installed) | Together | after 1 |
 | 3 | **Step 3b**: three towns as patches of 1-hectare tiles around the lake | Together | later |
 | 4 | **Step 3c**: produce and eat, with the three-town numbers redone for fish and land | Together | later |
@@ -51,12 +51,15 @@ python ui_main.py --headless --ticks 200 --print_interval 20
 | 19 Sep 2026 | **Caravans plan with A\* on a 1 km grid, and remember routes** once used a set number of times | A* on a fine grid would be too slow; remembered routes scale |
 | 19 Sep 2026 | **Fishing and boats exist**, added at step 7 after trade works | One system at a time |
 | 19 Sep 2026 | **The numbers are the truth; pictures are drawn from them** | So a zoomed-in view (houses, market square, roads) can come later without rewriting the simulation |
+| 19 Sep 2026 | **Hills and mountains to the north; one straight river along x = 0**, from the hills into the lake and on to the sea | Flat lowlands around the lake and to the sea, with the real height in the north. One straight river is simple to carve |
+| 19 Sep 2026 | **Layer 1 numbers:** lake about a day's walk across, north edge about 840 m, coast at y = −80, 1 m per km slope | A day's walk suits trade; hills of that size look big from afar |
+| 19 Sep 2026 | **Hillfort sits at the foot of the hills**, a little back from the shore | Hills (and later mines) within its work area |
 
 ---
 
 # 🌍 The world
 
-*Confirmed 19 September 2026. The formula itself is being worked out now.*
+*Confirmed 19 September 2026 (hills moved to the north the same day). Layer 1 of the formula is settled; the rest is being worked out.*
 
 **A 200 × 200 km world, described by a formula.** (0, 0) is the centre, x runs west → east, y runs south → north, 1 unit = 1 km, and 1 tick = 1 day.
 
@@ -65,27 +68,55 @@ python ui_main.py --headless --ticks 200 --print_interval 20
 Sketch, not to scale:
 
 ```
- N ↑
-   T T T T T T T . . . n n n ^ ^ ^ ^
-   T T T T T T T T . n n n n ^ ^ ^ ^
-   T T T T T T W T T n n n n ^ ^ ^ ^
-   T T T T T T ~ ~ ~ n n n n ^ ^ ^ ^
-   T T T T T ~ ~ ~ ~ H ≈ ≈ ≈ ≈ ^ ^ ^    ≈ river from the eastern hills into the lake
-   T T T . . . ~ ~ ~ n n n n ^ ^ ^ ^
-   T . . . . . F ≈ . . n n n n ^ ^ ^
-   . . . . . . . ≈ . . . n n n n ^ ^    ≈ river from the lake down to the sea
-   . . . . . . . ≈ . . . . n n n n ^
-   ~ ~ ~ ~ ~ ~ ~ ≈ ~ ~ ~ ~ ~ ~ ~ ~ ~    sea along the south coast
+ N ↑   ^ ^ ^ ^ ^ ^ ^ ^ ≈ ^ ^ ^ ^ ^ ^ ^ ^    mountains, continuing off the map
+       n n n n n n n n ≈ n n n n n n n n    hills
+       T T T T T . . H ≈ . . . . . . . .    H Hillfort: at the foot of the hills, by River 1
+       T T T T . . . ~ ~ ~ . . . . . . .
+       T T T W ~ ~ ~ ~ ~ ~ ~ . . . . . .    W Woodhaven: west shore, in the forest
+       T T T . . ~ ~ ~ ~ ~ . . . . . . .
+       T T . . . . . F ≈ . . . . . . . .    F Farmstead: south shore, at the outlet
+       . . . . . . . . ≈ . . . . . . . .
+       . . . . . . . . ≈ . . . . . . . .    flat farmland, sloping gently south
+       ~ ~ ~ ~ ~ ~ ~ ~ ≈ ~ ~ ~ ~ ~ ~ ~ ~    sea
 
-   T forest   . grassland   n hills   ^ mountains   ~ water   ≈ river
-   W Woodhaven   H Hillfort   F Farmstead
+       T forest   . grassland   n hills   ^ mountains   ~ water   ≈ river
 ```
 
-- **Centre:** a lake in a dip.
-- **East:** hills rising to mountains. **River 1** starts in the hills and flows west into the lake.
-- **North-west:** forest.
-- **South:** the sea. **River 2** drains the lake south to the sea. Lakes with an inflow need an outflow, or they turn salty, and this also links the lake to the sea for boats.
-- **Towns** on the lake shore, each in its own land: Woodhaven (forest), Hillfort (where River 1 leaves the hills), Farmstead (flat land by the outlet).
+- **North:** hills rising into a mountain range that continues beyond the map. The north edge is about 840 m high (Yahiko is 634 m).
+- **River 1** comes down from the northern hills and runs straight south along x = 0 into the lake.
+- **Centre:** the lake, about 28 km from shore to shore, so about a day's walk. That's roughly Lake Biwa's width.
+- **River 2** drains the lake straight south along x = 0 to the sea. Lakes with an inflow need an outflow, or they turn salty, and it links the lake to the sea for boats.
+- **South:** flat farmland sloping gently (1 m per km) to the sea, with the coast at y = −80.
+- **West and north-west:** forest. **East:** open farmland, room to grow.
+- **Towns:** Hillfort at the foot of the hills north of the lake, by River 1 (mines later); Woodhaven on the west shore in the forest; Farmstead on the south shore at the outlet.
+
+### The formula
+
+Built in layers, each understood before the next:
+
+| Layer | What | Status |
+|---|---|---|
+| 0 | Units: height in metres, sea level 0 m, below 0 is underwater | ✅ |
+| 1 | The big shape: slope to the sea, northern hills, lake dip | ✅ settled 19 Sep |
+| 2 | Noise: natural bumps; the coast and lake shore wiggle automatically | ▶ next |
+| 3 | Rivers: two grooves along x = 0 whose beds always run downhill | |
+| 4 | Terrain from height, slope and a forest map | |
+
+**Layer 1:**
+
+```
+height(x, y) = plain(y) + hills(y) − lakeDip(x, y)
+
+plain(y)    = 1 × (y + 80)                     rises 1 m per km north; coast at y = −80
+hills(y)    = 1500 × smoothstep(15, 200, y)    starts at y = 15, peaks off the map at y = 200
+lakeDip     = 63 × (1 − smoothstep(0, 20, r))  r = √(x² + y²), distance from the centre
+
+smoothstep(a, b, v): t = (v − a) / (b − a), kept between 0 and 1; result = t × t × (3 − 2t)
+```
+
+- The lake fills its dip until it spills over the lowest point of the rim. Because the land slopes south, that point is on the south side, exactly where River 2 leaves.
+- The lake surface is at about 60 m and the lake is about 44 m deep.
+- A lake only forms if the dip is deeper than slope × radius (63 m against 1 × 20 = 20 m).
 
 ### Detail: each part uses what it needs
 
@@ -225,7 +256,7 @@ The world eats 300 food and could make up to about 500. Every town both buys and
 | 5 | Trade between towns (straight-line travel time), money conserved. Aim: the success test above | |
 | 6 | **Caravans:** you write A*, one trader cart, routes remembered | |
 | 7 | **Fishing**, then **boats** | |
-| 8+ | Routes become roads · towns grow and claim land · rain and emergent rivers · terracing · sea trade with the outside world · zoomed-in settlement view · the game | later |
+| 8+ | Routes become roads · towns grow and claim land · rain and emergent rivers · terracing · mines in the hills by Hillfort · floating logs down rivers · sea trade with the outside world · zoomed-in settlement view · the game | later |
 
 **No game graphics, multiplayer or Telegram until three towns run 1,000 ticks without dying.** The map viewer from step 3a is a tool for checking the world, not the game.
 
@@ -339,7 +370,8 @@ Small, and understood. A new, tiny core that grows one piece at a time, with eve
 - Decided settlements should sit on a real map, with terrain belonging to the world.
 - **Confirmed the world design**: 200 × 200 km formula world, central lake, eastern hills, north-western forest, sea to the south, one river into the lake and one out to the sea.
 - Settlements become patches of 1-hectare tiles with work areas. Caravans plan with A* on a 1 km grid and remember routes. Fishing and boats come at step 7.
-- Next: work out the world formula together, one layer at a time.
+- Started the world formula. **Layer 1 settled**: hills moved to the north, one straight river along x = 0, lake about a day's walk across, north edge about 840 m.
+- Next: Layer 2, noise.
 
 ### 18 September 2026
 - Measured the wealth drain: transport 55%, upkeep 34%, tool fee 11%. **Made money a conserved currency** (PR #1).
