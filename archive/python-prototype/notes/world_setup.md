@@ -69,4 +69,4 @@ The block at the bottom (`if __name__ == "__main__":`) only runs when the file i
 
 **Change:**
 - If the data is missing or wrong, stop with a clear error instead of silently carrying on. If the world data is a TypeScript file rather than JSON, the types catch this before it even runs: a recipe missing `labor` won't compile.
-- Start with the three-town design in [`PROJECT.md`](../PROJECT.md): Farmstead, Woodhaven, Hillfort.
+- Start with the three-town design in [`PROJECT.md`](../../../PROJECT.md): Farmstead, Woodhaven, Hillfort.
