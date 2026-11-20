@@ -63,11 +63,11 @@ Each stage ends with something you can run and look at. Early stages are deliber
 | | 1.2 temperature · 1.3 rain · 1.4 rivers and lakes · 1.5 fertility and biomes · 1.6 map viewer | |
 | **2** | **The realistic world generator** *(proposed)*: tectonic plates, volcanoes and island arcs, rock hardness, river and slope erosion, ocean currents, rejection of bad worlds. Allowed to take 5–10 minutes | Watch valleys carve and islands form |
 | **3** | **The underground:** rock layers, ore by geology, caves and caverns, magma | See where the dwarves will dig |
-| **4** | **Peoples and history:** origin homelands for humans, elves and dwarves; years of coarse history at world generation (founding, colonies, expansion) | See a world map with a history |
+| **4** | **Peoples and history:** origin homelands for humans, elves and dwarves; years of coarse history at world generation (founding, colonies, expansion); factions growing into kingdoms with lords beneath them | See a world map with a history and borders |
 | **5** | **Produce and eat:** settlements as groups of people (pops), goods, recipes, the food maths; animals and hunting | Watch each settlement feed itself, or fail to |
 | **6** | **Markets and money:** prices from supply and demand, conserved money, barter and credit in hamlets, coin in towns | See prices differ from region to region |
-| **7** | **Traders, routes and transport:** AI traders that find their way, boats on rivers and the sea, paths becoming roads | Watch caravans and boats move, and roads appear |
-| **8** | **A world that changes:** seasons and weather, bad harvests, settlements growing and shrinking, new colonies founded, all regions always running | Leave it running and watch where it goes |
+| **7** | **Traders, routes and transport:** AI traders that find their way, travel speed by terrain, boats on rivers and the sea, paths becoming roads | Watch caravans and boats move, and roads appear |
+| **8** | **A world that changes:** seasons and weather, bad harvests, forests felled and regrowing, simple construction (houses, markets, ports, taverns), ideas spreading along routes, settlements growing and shrinking, new colonies, politics | Leave it running and watch where it goes |
 
 **The success test for stages 5–8** (carried over from the Python prototype): years of game time, nobody starves, money stays constant, and prices move within a range rather than drifting away.
 
@@ -106,6 +106,8 @@ Each stage ends with something you can run and look at. Early stages are deliber
 | **World generation may take 5–10 minutes** if that buys realism (erosion, geology, volcanoes) | Realism-game players are happy to wait |
 | **Underground after the surface**: caves, ore, magma | Dwarves need it, but it's built on the surface world |
 | **Local AI only for words** (names, chronicles, dialogue), never for simulation decisions | Too slow at ~16 tokens a second; rules are faster, repeatable and understood |
+| **One currency for now** | Several currencies would be realistic but much harder |
+| **Construction stays simple**: towns have houses, markets, ports and so on, but this is not a colony builder | Realistic towns without turning the project into a different game |
 
 ## Carried over from September
 
@@ -147,6 +149,7 @@ Each stage ends with something you can run and look at. Early stages are deliber
 - **Design note 1.0 agreed:** the world pipeline, formula plus 1 km grid, world and test-region sizes, climate range, and a first biome table. Stage 1 begins.
 - Started note 1.1 (height): lesson A, 2D value noise, with a slower step-by-step explanation and a side note on finite element shape functions.
 - New ideas recorded in [`docs/VISION.md`](docs/VISION.md): simulation first, player last; realistic slow world generation; the underground; humans, elves and dwarves with homelands; islands; boats; animals; levels of detail; local AI. Two research reports in [`docs/research/`](docs/research/). Roadmap reordered into Part A (the world) and Part B (the game).
+- More ideas recorded: factions growing into kingdoms with lords beneath them (one currency for now); people reshaping the land (simple construction, forests felled and replanted, dams, ports, taverns); travel speed by terrain; lessons from history (Rome–Egypt grain ships, the Silk Road, ideas spreading along routes); a checklist of what the world generator still needs; a first sketch of the simulation's ten layers.
 
 ### Before the restart
 See [`archive/2026-09-plan/PROJECT-2026-09.md`](archive/2026-09-plan/PROJECT-2026-09.md#-session-log) (18–19 September 2026: Python fixes, three-town design, the 200 km world, the first noise lessons).
