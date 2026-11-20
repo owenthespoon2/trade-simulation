@@ -1,19 +1,20 @@
 # Project file
 
-*Last updated: 20 November 2026 (agents brainstorm) · **Restarted** on this date*
+*Last updated: 21 November 2026 (foundation planned) · **Restarted** 20 November 2026*
 
-**Read this first when you come back.** The top section says what we're doing and what's next. The game itself is described in [`docs/VISION.md`](docs/VISION.md). Updated at the end of every session.
+**Read this first when you come back.** The top section says what we're doing and what's next. The game itself is described in [`docs/VISION.md`](docs/VISION.md). Updated at the end of every session. **Any AI picking this up (Claude or not): read [`AGENTS.md`](AGENTS.md) first.**
 
 ---
 
 # 📍 NOW
 
-**Phase: choosing the foundation.** The world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)), note 1.1 (height) has its first lesson, and the agents and economy are brainstormed ([note 4.0](docs/design/4.0-agents-brainstorm.md)). No code yet.
+**Phase: foundation planned; next it gets built in `evolution-sandbox`.** The world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)), note 1.1 (height) has its first lesson, and the agents and economy are brainstormed ([note 4.0](docs/design/4.0-agents-brainstorm.md)). No code yet.
 
 **Where things stand:**
 - **The vision is big and written down:** a fantasy medieval world that runs by itself (humans, elves and dwarves; factions and kingdoms; an economy; traders and boats; people reshaping the land; magic later), with the player coming last. See [`docs/VISION.md`](docs/VISION.md).
 - **The agents are brainstormed** (20 Nov): every person named with a family tree, **families decide**, every trader tracked, prices that **emerge** from agents' beliefs, **dwarves mint the money**, and two decision modes: scoring first, then **evolving neural networks** (the favourite idea). Summary in [VISION section 13](docs/VISION.md#13-agents-and-the-economy).
-- **Next conversation: the foundation.** Which engine or graphics library (or our own on top of packages), a **headless mode** first with graphics on top, how agents are stored and drawn, the main loop, statistics. It gets built in a new test repository, [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) (evolving creatures in a toy world), which then becomes the base for this project.
+- **The foundation is agreed** (21 Nov), in [evolution-sandbox's design note 0](https://github.com/owenthespoon2/evolution-sandbox/blob/main/docs/design/0-foundation.md): **MonoGame** for graphics (+ Dear ImGui panels, Myra or our own menus later), **headless first** with one simulation library and two front ends, save/load from day one, parallel steps inside a tick, events in Parquet/DuckDB, **Python** for reports and analysis. A reusable **Foundation** library will come into this repo as a **git submodule**. Summary in [VISION section 8](docs/VISION.md#8-how-its-built).
+- **Next conversation:** build evolution-sandbox **milestone 0** (speed test first), in that repository.
 - **The language is chosen: C# / .NET.** Claude writes the code; you understand every piece through design notes before it's built.
 - The September work (Python prototype, 200 km lake world, TypeScript plan) is in [`archive/`](archive/). The noise maths in [`notes/world-formula.md`](notes/world-formula.md) carries over.
 
@@ -25,8 +26,8 @@
 | 2 | Install the free **.NET SDK** | Claude | ✅ .NET 10 (long-term support) installed 20 Nov |
 | 3 | **[Design note 1.0: how the world is made](docs/design/1.0-how-the-world-is-made.md).** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region. All five proposals agreed | Together | ✅ understood 20 Nov |
 | 4 | **Brainstorm the agents**: who they are, what they strive for, how they decide, groups and individuals, the economy. [Note 4.0](docs/design/4.0-agents-brainstorm.md), [VISION section 13](docs/VISION.md#13-agents-and-the-economy) | Together | ✅ 20 Nov (goods and recipes, changing the world and running cheaply still to do) |
-| 5 | **The foundation** (new chat): engine or graphics library, **headless mode first**, how agents are stored and drawn, main loop, statistics. Planned in the [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) repository | Together | ▶ next chat |
-| 6 | **Build evolution-sandbox milestone 1** (creatures with tiny evolving brains learn to find food) on that foundation | Claude, after you understand the notes | after 5 |
+| 5 | **The foundation** (new chat): engine or graphics library, **headless mode first**, how agents are stored and drawn, main loop, statistics. Planned in the [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) repository ([note 0](https://github.com/owenthespoon2/evolution-sandbox/blob/main/docs/design/0-foundation.md)) | Together | ✅ 21 Nov |
+| 6 | **Build evolution-sandbox milestone 0** (speed test, headless runs, window, data), then neural network lessons and **milestone 1** (creatures learn to find food) | AI, after you understand the notes | ▶ next chat |
 | 7 | **Design note 1.1: height.** Lesson A (2D value noise) done; next lesson B, octaves; then simplex, the landmass, mountain ranges | Together | after 5 |
 | 8 | Build 1.0 + 1.1 in C# on the foundation, with a first map picture | Claude, after you understand the notes | after 7 |
 | 9 | **Second agents brainstorm:** goods and recipes, how agents change the world, keeping it cheap to run | Together | any time |
@@ -135,6 +136,19 @@ Each stage ends with something you can run and look at. Early stages are deliber
 | **A separate test repository, `evolution-sandbox`, builds the foundation** (engine, graphics, agents, statistics) before the world code | Test the base and neuroevolution on something small first |
 | **Headless mode in both projects**: no window, console only, full speed | Much faster, and the way to test the simulation; the simulation never depends on the graphics |
 
+## Made in the foundation chat (21 Nov 2026), detail in [evolution-sandbox note 0](https://github.com/owenthespoon2/evolution-sandbox/blob/main/docs/design/0-foundation.md)
+
+| Decision | Why |
+|---|---|
+| **MonoGame** + Dear ImGui/ImPlot now, **Myra or our own UI** for the game's menus later | We own the loop; very active; proven by Stardew Valley and Celeste. Raylib-cs is only passively maintained; Godot owns the loop |
+| **One simulation library, separate front ends;** outside changes are commands applied between ticks | The front end could be replaced (e.g. by Godot) without a rewrite |
+| **Data:** counted actions, meaningful events (every trade) in **Parquet + DuckDB**, agents' **reasons** logged in scoring mode | "Log everything" would be billions of rows; reasons answer "why did they trade this?" |
+| **Python** for reports and analysis | The research standard; C# only writes data |
+| **Parallel steps inside a tick** for this one big world (read anything, write only your own slot) | Uses the 6 cores while staying repeatable: about 3–5× faster |
+| Storage per system (array of records or plain arrays) **chosen with a speed test** | A million people with simple daily loops may want plain arrays |
+| The **Foundation** library comes in as a **git submodule** pinned to a version | Reuse without copying; no access keys |
+| **Neuroevolution first; reinforcement learning (and imitation learning from the scoring AI) later**, likely the trade sim's neural mode | A reward can fairly describe what people want here |
+
 ## Carried over from September
 
 | Decision | Why |
@@ -185,6 +199,11 @@ Each stage ends with something you can run and look at. Early stages are deliber
 - Agreed: a ladder of needs, scoring with personality and habit, limited knowledge, memories; the economy emerging from price beliefs on market days; **the dwarves mint the money**; banks; every trade recorded.
 - Two research reports: [neural networks and local AI for decisions](docs/research/2026-11-20-neural-agents.md), and [evolving agents and emergent behaviour](docs/research/2026-11-20-emergent-evolution.md). The owner's favourite idea: **evolving neural networks**, with emergent trade as a real research question.
 - Decided: a separate repository, [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox), to build the foundation (engine, graphics, headless mode) with a toy world of evolving creatures. Created with its starting docs. **Next chat: the foundation.**
+
+### 21 November 2026: the foundation chat
+- Planned the foundation in [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) ([note 0](https://github.com/owenthespoon2/evolution-sandbox/blob/main/docs/design/0-foundation.md)). A Sonnet researcher checked the engines; the choice moved from Raylib-cs to **MonoGame** on the evidence.
+- Recorded the foundation in [VISION section 8](docs/VISION.md#8-how-its-built), and RL and imitation learning in section 13.
+- Added [`AGENTS.md`](AGENTS.md) so a non-Claude AI can continue with the same way of working (cheap helper agents for scouting and research).
 
 ### Before the restart
 See [`archive/2026-09-plan/PROJECT-2026-09.md`](archive/2026-09-plan/PROJECT-2026-09.md#-session-log) (18–19 September 2026: Python fixes, three-town design, the 200 km world, the first noise lessons).
