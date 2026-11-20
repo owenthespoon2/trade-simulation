@@ -69,6 +69,39 @@ You leave it running and watch where it goes. **The player comes in near the end
 
 **Built after the surface.** First the land above ground, then the underground generated from it.
 
+### Still to add to the world generator
+
+*(Listed 20 November 2026, as a checklist so nothing is forgotten.)*
+
+1. **Seasons in the climate:**
+   - monthly temperature and rain, not just yearly averages;
+   - snow cover, frozen rivers, mountain passes closing in winter;
+   - wet and dry seasons.
+   - Trade depends on all of this.
+2. **Other resources than ore:**
+   - building stone and clay;
+   - salt, a vital medieval trade good;
+   - peat, sand;
+   - rich flood-plain soil along big rivers, like the Nile's.
+3. **Water details:**
+   - **which rivers boats can use** (wide and deep enough);
+   - **fords and crossing points**, where towns and bridges appear;
+   - **natural harbours** (sheltered bays) for ports;
+   - springs.
+4. **The sea:**
+   - fish stocks, richest in shallow coastal water;
+   - reefs and dangerous coasts;
+   - winds and currents that help or hinder sailing.
+5. **Natural disasters:** floods, earthquakes, eruptions, wildfires, droughts.
+6. **Kinds of forest and plants:**
+   - oak, pine and bamboo, each with its own timber and regrowth time;
+   - wild food plants.
+7. **Fantasy elements (open question):**
+   - is there magic in the world?
+   - magical places, monsters, dangerous wild regions? (Dwarf Fortress has "savage", "good" and "evil" regions.)
+   - This would affect where people settle and what they trade.
+8. **Names** for places, rivers and mountains (later; a local AI could help here).
+
 Research notes: [`research/2026-11-20-world-generation.md`](research/2026-11-20-world-generation.md).
 
 ## 2. Civilisations and species
@@ -88,6 +121,14 @@ Research notes: [`research/2026-11-20-world-generation.md`](research/2026-11-20-
 - **Each race has an origin place**, a homeland it starts from, and spreads out by **founding colonies**. Part of the fun is leaving the world running and watching where towns grow and where people decide to settle.
 - **Island peoples** live by the sea: fishing, boats, sea trade.
 - **Animals:** wild animals for hunters, herds that move with the seasons. A small part of the world, but it gives hunters something real to hunt.
+
+### Factions, kingdoms and politics
+
+*(Added 20 November 2026.)* As the history runs, the peoples organise themselves:
+
+- **Groups of towns form factions.** Grow big enough and they become **small kingdoms**.
+- **Big kingdoms have smaller powers underneath them**: lords, provinces, vassal towns. A hierarchy, so there are **politics**.
+- **One currency for now.** Different currencies per kingdom would be realistic, but much harder; maybe much later.
 - **Sizes from cities down to hamlets.** A few hundred big towns and cities, plus countless small places: a farmstead by the road, a woodcutter's hut in the forest.
 - **Money isn't everywhere.** Cities use coin. Subsistence farmers out in the fields and forests may have no money at all, and only **barter**: your salt for their eggs. *Historically, medieval peasants used some coin, but much rural exchange was barter, credit or payment in kind.*
 
@@ -117,6 +158,46 @@ The ideas that make the world feel alive. None of these are drawn by hand; they 
   - on foot, horses, carts and caravans;
   - **boats** on rivers, lakes and the sea.
   - Historically, water transport was many times cheaper than land, so rivers, coasts and islands matter a lot.
+- **Travel speed depends on the land:**
+  - plains are fast and forests are slow; hills and marshes are slower still;
+  - a road is faster than open country;
+  - a big kingdom might **cut a road through a forest**.
+
+### People change the world
+
+*(Added 20 November 2026.)* The people in the simulation don't just trade; they **reshape the land**, because that's what real people did:
+
+- **Construction:**
+  - fields, houses, town halls and markets;
+  - ports, bridges and dams;
+  - way stations, trade stops and **taverns along the routes**, as there were in real history.
+  - Kept **simple**: this must not turn into a colony builder. But towns have these things, and a town that lacks them should suffer for it.
+- **Using the land up and putting it back:**
+  - a town by a forest can have a timber industry, cutting the forest down and replanting it;
+  - farms replace forest;
+  - rivers get dammed.
+- **What drives them:** every agent (a family, a trader, a town) is always striving for something: food, safety, wealth, status. Their choices add up to the changes we see.
+
+### Forests, regrowth and running out
+
+*(Added 20 November 2026.)* Time matters here: trees take years to decades to grow back. A big world won't run out of resources overall, but **local shortages** are realistic and interesting.
+
+**It really happened.** These figures are approximate, from general history knowledge:
+- **England** was mostly forest after the Ice Age. By the Domesday Book (1086) only about 15% was woodland, and later even less, because forest became fields.
+- **Iron smelting** burned huge amounts of charcoal and used up woods.
+- **Ship timber** (big oaks) was in short supply in later centuries.
+- **Coppicing** was the medieval answer: cutting trees to the stump every 7–20 years so they regrow as many poles. It's a renewable wood supply, but no good for big timber. A big oak for beams or ships takes 80–150 years.
+
+That gives a natural mechanic: **managed woodland** (coppice) gives a steady supply of firewood and charcoal; **old forest** gives rare, slow-to-replace big timber.
+
+### Lessons from real history
+
+*(Added 20 November 2026.)* Real examples to borrow from:
+
+- **Rome and Egypt:** Rome was fed by grain shipped from Egypt across the Mediterranean. Cheap sea transport let a city grow far bigger than its own land could feed.
+- **The Silk Road:** a long overland route carrying goods **and ideas**. Paper, techniques and new crops spread along trade routes.
+- **Ideas and discoveries travel with traders.** A new technique (a better plough, a new crop) could spread from town to town along the routes, faster along busy ones.
+- **Taverns, inns and way stations** grew up a day's travel apart along busy roads.
 
 ## 5. The player: a trader (much later)
 
@@ -191,3 +272,25 @@ Ideas to think through. **Nothing is decided yet:**
   - writing things the simulation has *already decided*: town and character names, a chronicle of the world's history, dialogue with traders;
   - running in the background and saving its results.
 - Research notes: [`research/2026-11-20-living-world.md`](research/2026-11-20-living-world.md).
+
+## 10. The layers of the simulation (draft, for discussion)
+
+*(Sketched 20 November 2026.)* The world generator makes the stage; the simulation is the play. It's several layers stacked on each other. Each layer reads the ones below it and changes shared things (the land, stocks of goods, prices), never another layer's insides.
+
+| # | Layer | What it holds | What changes it | Updates roughly |
+|---|---|---|---|---|
+| 1 | **Land** | Height, rivers, soil, biomes, plus changes people made | World generation; then people: fields, felled forest, roads, dams | rarely |
+| 2 | **Nature** | Forests and their regrowth, animals, fish, soil fertility, seasons and weather | Growth, seasons, weather; hunting, fishing, felling | monthly / seasonally |
+| 3 | **People** | Groups of people per settlement (pops): race, job, age, health, needs | Births, deaths, hunger, migration, founding new settlements | monthly |
+| 4 | **Work and production** | Jobs, recipes, what each place makes from its land | Pops choosing work; resources available | daily / weekly |
+| 5 | **Economy** | Markets, stocks, prices, money, barter and credit | Supply and demand, trade arriving | daily / weekly |
+| 6 | **Transport** | Traders, caravans, boats, routes, roads, travel times | Traders' decisions; terrain; roads built | daily |
+| 7 | **Building** | Houses, fields, markets, town halls, ports, bridges, taverns | Towns investing when they need and can afford it | monthly |
+| 8 | **Society and politics** | Factions, kingdoms, lords and vassals, taxes, laws | Growth, wealth, alliances, conflict | yearly |
+| 9 | **Knowledge** | Which techniques and crops each place knows | Ideas spreading along trade routes | yearly |
+| 10 | **History** | The record of what happened | Everything above; at world generation, layers 3–9 run coarsely for centuries | — |
+
+**The open questions for this part of the design:**
+- What does each kind of agent (a family, a trader, a town, a lord) strive for, and how do they choose?
+- How much is simulated as groups, and how much as individuals?
+- How fast does each layer run, and how do they stay in step (the time-scale problem)?
