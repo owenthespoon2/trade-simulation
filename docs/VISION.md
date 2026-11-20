@@ -94,12 +94,10 @@ You leave it running and watch where it goes. **The player comes in near the end
    - winds and currents that help or hinder sailing.
 5. **Natural disasters:** floods, earthquakes, eruptions, wildfires, droughts.
 6. **Kinds of forest and plants:**
-   - oak, pine and bamboo, each with its own timber and regrowth time;
+   - tree species chosen by **biome and temperature**: oak and beech in temperate forest, pine and spruce in the cold north, bamboo in the warm wet south, and so on;
+   - each species has its own timber, uses and regrowth time, and some can be **coppiced**;
    - wild food plants.
-7. **Fantasy elements (open question):**
-   - is there magic in the world?
-   - magical places, monsters, dangerous wild regions? (Dwarf Fortress has "savage", "good" and "evil" regions.)
-   - This would affect where people settle and what they trade.
+7. **Fantasy elements:** **yes, there will be magic** (decided 20 Nov), but added later; see [section 11](#11-magic-later-but-planned-for-now). The world generator should leave room for a **magic layer**: where magic is strong or weak, magical materials, dangerous wild regions.
 8. **Names** for places, rivers and mountains (later; a local AI could help here).
 
 Research notes: [`research/2026-11-20-world-generation.md`](research/2026-11-20-world-generation.md).
@@ -294,3 +292,88 @@ Ideas to think through. **Nothing is decided yet:**
 - What does each kind of agent (a family, a trader, a town, a lord) strive for, and how do they choose?
 - How much is simulated as groups, and how much as individuals?
 - How fast does each layer run, and how do they stay in step (the time-scale problem)?
+
+## 11. Magic: later, but planned for now
+
+*(Added 20 November 2026.)* **There will be magic.** It makes the world far more interesting. But it comes **after** the world and the economy work. It's a third system on top of the world simulation and the economic simulation.
+
+### What the owner likes
+
+- **Mushoku Tensei:**
+  - magic is something you **grow from childhood by using it**;
+  - talent varies, and a gifted child grows fast;
+  - mages are ranked by skill.
+- **Frieren:**
+  - long-lived elf mages;
+  - magic is **knowledge that is researched**, and spreads over decades until a once-rare spell is common.
+
+### Ideas so far
+
+- **Everyone is born with aptitudes:**
+  - each person has natural talents (magic among them) that grow with use;
+  - race shapes them, e.g. **elves** good at forest and healing magic.
+- **Humans:** maybe no special affinity, but the best at **research and education** (universities), so they push magic forward fastest.
+- **Long-lived species** (elves) remember and know more, but change more slowly.
+- **Magical trade goods by region:**
+  - **dwarves forge swords** and other enchanted metalwork;
+  - **elves cultivate herbs**;
+  - **humans brew potions** or sell research.
+- **Magic develops over history:** techniques are discovered and spread along routes, just like other knowledge (simulation layer 9).
+
+### The risk
+
+Magic can **break things**, especially the economy. If a spell grows food or heals for free, farming and medicine stop mattering. So magic needs **limits and costs**:
+- rare talent;
+- years of training;
+- materials that have to be gathered and traded;
+- tiredness.
+
+Research: [`research/2026-11-20-magic-systems.md`](research/2026-11-20-magic-systems.md). Its recommendation fits the ideas above almost exactly:
+1. a **talent** number per person, adjusted by race;
+2. **capacity that grows with use** up to a ceiling set by talent (Mushoku Tensei);
+3. **spells as world knowledge** that spreads over decades, with elves as long-lived researchers (Frieren);
+4. **a material cost per use**, so magic creates trade in reagents.
+
+All of it is cheap: a few numbers per person, plus one record per spell.
+
+### When to add it: the decision
+
+**Proposed: leave hooks for it now, build the system later.** It costs almost nothing to leave room for it:
+
+| Hook, built in from the start | Why it costs little now |
+|---|---|
+| People have a **table of aptitudes and skills**, not fixed jobs | Magic later is just more skills in the same table |
+| Goods and recipes are **data, not code** | Magical herbs, reagents and enchanted swords are new rows of data |
+| Races are **data**: lifespan, aptitudes, favourite lands | Elves' long lives and affinities are numbers to fill in |
+| The world generator can add **one more map layer** | A "magic strength" map is one more 1 km grid, cheap |
+| **Knowledge spreads** as its own layer | Spells spread through the same mechanism as better ploughs |
+
+Then, when the world and the economy run well, we design the magic system itself with its own design note.
+
+## 12. Individuals and groups
+
+*(Added 20 November 2026.)* **Can we store hundreds of thousands of individual people with their own skills? Yes, easily.**
+
+| | Rough size |
+|---|---|
+| One person: race, age, health, home, job, ~32 skill values and a few links | ~100–150 bytes |
+| 1,000,000 people | ~100–150 MB |
+| This PC's memory | 32 GB, so a million people use under 1% of it |
+
+- **Storage isn't the hard part.** Updating a million simple records once a month takes a fraction of a second on 12 threads.
+- **The expensive part is decisions:** finding paths, choosing what to do, matching buyers and sellers. Those are what levels of detail and groups are for.
+
+**The plan: a hybrid, as Dwarf Fortress does.**
+- **The masses as groups** (pops). For example: "Riverford: 340 human farmers, 12 smiths, average skills such and such, 3% with magic talent".
+- **Notable people as individuals**, each with their own skills, life story and choices: lords, master smiths, mages, traders, founders. Dwarf Fortress does this with its "historical figures", individuals who appear in its generated legends. It has tens to hundreds of thousands of them.
+- **A person can step out of the group** when they become notable: the farmer's child with rare magic talent, the trader who gets rich.
+
+### Is this getting too detailed?
+
+**Computing power is not the limit.**
+- Dwarf Fortress is mostly single-threaded, and it's slow because it simulates every item, worm and wall tile at 1 m scale around your fort, not because of its world.
+- We have 12 threads and design for speed from the start.
+
+**The real limit is our time and understanding**, and the Python lesson: **too many systems switched on at once can't be debugged.** So the rule is:
+
+> **Design wide, build narrow.** Plan room for everything (hooks), but build and switch on one system at a time, and only add the next once the last one works.
