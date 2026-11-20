@@ -8,7 +8,7 @@
 
 # 📍 NOW
 
-**Phase: Stage 0, planning the restart.** No code yet. We're deciding what the game is, how it's built and in what order, so every later step has a place in the plan.
+**Phase: Stage 1, the world.** The plan is settled and the world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)). Next is note 1.1, height. No code yet.
 
 **Where things stand:**
 - **The game is defined:** a fantasy medieval world where you play a wandering trader who works their way up. See [`docs/VISION.md`](docs/VISION.md).
@@ -21,14 +21,14 @@
 |---|---|---|---|
 | 1 | Read [`docs/VISION.md`](docs/VISION.md) and correct anything that's wrong or missing | You | any time |
 | 2 | Install the free **.NET SDK** | Claude | ✅ .NET 10 (long-term support) installed 20 Nov |
-| 3 | **[Design note 1.0: how the world is made](docs/design/1.0-how-the-world-is-made.md).** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region. Draft written; answer its questions in section 10 | Together | ▶ now |
-| 4 | **Design note 1.1: height.** Finish the noise lessons (2D value noise, octaves, simplex), then shape a landmass with ocean around it | Together | after 3 |
+| 3 | **[Design note 1.0: how the world is made](docs/design/1.0-how-the-world-is-made.md).** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region. All five proposals agreed | Together | ✅ understood 20 Nov |
+| 4 | **Design note 1.1: height.** Finish the noise lessons (2D value noise, octaves, simplex), then shape a landmass with ocean around it | Together | ▶ now |
 | 5 | Build 1.0 + 1.1 in C#, with a first map picture | Claude, after you understand the notes | after 4 |
 
 ## Resume quickly
 
 1. In `C:\Projects\trade-system-prototype`, run `git pull`.
-2. Read **NOW** above, then the newest design note in [`docs/design/`](docs/design/) (empty until note 1.0 is written).
+2. Read **NOW** above, then the newest design note in [`docs/design/`](docs/design/README.md).
 3. Tell Claude which step to continue.
 
 ---
@@ -55,8 +55,8 @@ Each stage ends with something you can run and look at. Early stages are deliber
 
 | Stage | What | You'll be able to |
 |---|---|---|
-| **0** | **Restart and plan:** vision, roadmap, language, way of working | Read the plan ▶ *now* |
-| **1** | **The world**, built and checked on a small test region first: | See the world as a pixel map, zoom around it |
+| **0** | **Restart and plan:** vision, roadmap, language, way of working | Read the plan ✅ |
+| **1** | **The world**, built and checked on a small test region first ▶ *now* | See the world as a pixel map, zoom around it |
 | | 1.1 height (noise, mountains, coasts, ocean all round) | |
 | | 1.2 temperature (north–south and altitude) | |
 | | 1.3 rain (wind, moisture, rain shadows) | |
@@ -91,6 +91,10 @@ Each stage ends with something you can run and look at. Early stages are deliber
 | **Biomes come from height, temperature, rain and rivers**, never painted by hand | So the world is consistent and different every seed |
 | **Restart the docs**; September's plan archived | The repo should show where we are now |
 | **Research and scouting run on cheaper models** (Sonnet/Haiku) | Saves tokens. Opus only for hard design |
+| **World pipeline: height → temperature → rain → rivers and lakes → fertility and biomes** ([note 1.0](docs/design/1.0-how-the-world-is-made.md)) | Each step only uses the ones before it, like Dwarf Fortress' world generation |
+| **Height stays a formula; climate and rivers live on a 1 km grid**, calculated once when the world is made | Rivers and rain depend on everything uphill or upwind, so they need the whole map at once |
+| **Final world 1,024 × 1,024 km** (about Japan's land area); **test region 256 × 256 km** with a squashed climate | Small enough to try many seeds fast; scale up once it works |
+| **Climate:** about −2 °C in the far north, about 22 °C in the far south, 6.5 °C colder per 1,000 m, wind from the west | Cold north and warm south give the range of biomes we want |
 
 ## Carried over from September
 
@@ -127,6 +131,8 @@ Each stage ends with something you can run and look at. Early stages are deliber
 - Defined the game: a fantasy medieval trader game in a living world, inspired by Dwarf Fortress and RimWorld. Written up in [`docs/VISION.md`](docs/VISION.md).
 - New way of working: design note → you understand → Claude builds → the note stays.
 - Archived the September plan and rewrote this file, the README and the roadmap.
+- Installed the .NET 10 SDK.
+- **Design note 1.0 agreed:** the world pipeline, formula plus 1 km grid, world and test-region sizes, climate range, and a first biome table. Stage 1 begins.
 
 ### Before the restart
 See [`archive/2026-09-plan/PROJECT-2026-09.md`](archive/2026-09-plan/PROJECT-2026-09.md#-session-log) (18–19 September 2026: Python fixes, three-town design, the 200 km world, the first noise lessons).
