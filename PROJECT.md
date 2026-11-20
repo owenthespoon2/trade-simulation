@@ -1,6 +1,6 @@
 # Project file
 
-*Last updated: 20 November 2026 · **Restarted** on this date*
+*Last updated: 20 November 2026 (agents brainstorm) · **Restarted** on this date*
 
 **Read this first when you come back.** The top section says what we're doing and what's next. The game itself is described in [`docs/VISION.md`](docs/VISION.md). Updated at the end of every session.
 
@@ -8,11 +8,12 @@
 
 # 📍 NOW
 
-**Phase: Stage 1, the world, plus brainstorming the simulation.** The world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)), and note 1.1 (height) has its first lesson. No code yet.
+**Phase: choosing the foundation.** The world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)), note 1.1 (height) has its first lesson, and the agents and economy are brainstormed ([note 4.0](docs/design/4.0-agents-brainstorm.md)). No code yet.
 
 **Where things stand:**
 - **The vision is big and written down:** a fantasy medieval world that runs by itself (humans, elves and dwarves; factions and kingdoms; an economy; traders and boats; people reshaping the land; magic later), with the player coming last. See [`docs/VISION.md`](docs/VISION.md).
-- **Next conversation: brainstorm the agents** (what people, traders, towns and lords strive for, how they decide, groups versus individuals, goods and recipes). Starting in a fresh chat, because this one got long.
+- **The agents are brainstormed** (20 Nov): every person named with a family tree, **families decide**, every trader tracked, prices that **emerge** from agents' beliefs, **dwarves mint the money**, and two decision modes: scoring first, then **evolving neural networks** (the favourite idea). Summary in [VISION section 13](docs/VISION.md#13-agents-and-the-economy).
+- **Next conversation: the foundation.** Which engine or graphics library (or our own on top of packages), a **headless mode** first with graphics on top, how agents are stored and drawn, the main loop, statistics. It gets built in a new test repository, [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) (evolving creatures in a toy world), which then becomes the base for this project.
 - **The language is chosen: C# / .NET.** Claude writes the code; you understand every piece through design notes before it's built.
 - The September work (Python prototype, 200 km lake world, TypeScript plan) is in [`archive/`](archive/). The noise maths in [`notes/world-formula.md`](notes/world-formula.md) carries over.
 
@@ -23,9 +24,12 @@
 | 1 | Read [`docs/VISION.md`](docs/VISION.md) and correct anything that's wrong or missing | You | any time |
 | 2 | Install the free **.NET SDK** | Claude | ✅ .NET 10 (long-term support) installed 20 Nov |
 | 3 | **[Design note 1.0: how the world is made](docs/design/1.0-how-the-world-is-made.md).** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region. All five proposals agreed | Together | ✅ understood 20 Nov |
-| 4 | **Brainstorm the agents** (think tank, new chat): who the agents are, what each strives for, how they decide, groups versus individuals, goods and recipes. Results go into `docs/VISION.md` and a new note in `docs/design/` | Together | ▶ next chat |
-| 5 | **Design note 1.1: height.** Lesson A (2D value noise) done; next lesson B, octaves; then simplex, the landmass, mountain ranges | Together | after 4 |
-| 6 | Build 1.0 + 1.1 in C#, with a first map picture | Claude, after you understand the notes | after 5 |
+| 4 | **Brainstorm the agents**: who they are, what they strive for, how they decide, groups and individuals, the economy. [Note 4.0](docs/design/4.0-agents-brainstorm.md), [VISION section 13](docs/VISION.md#13-agents-and-the-economy) | Together | ✅ 20 Nov (goods and recipes, changing the world and running cheaply still to do) |
+| 5 | **The foundation** (new chat): engine or graphics library, **headless mode first**, how agents are stored and drawn, main loop, statistics. Planned in the [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) repository | Together | ▶ next chat |
+| 6 | **Build evolution-sandbox milestone 1** (creatures with tiny evolving brains learn to find food) on that foundation | Claude, after you understand the notes | after 5 |
+| 7 | **Design note 1.1: height.** Lesson A (2D value noise) done; next lesson B, octaves; then simplex, the landmass, mountain ranges | Together | after 5 |
+| 8 | Build 1.0 + 1.1 in C# on the foundation, with a first map picture | Claude, after you understand the notes | after 7 |
+| 9 | **Second agents brainstorm:** goods and recipes, how agents change the world, keeping it cheap to run | Together | any time |
 
 ## Resume quickly
 
@@ -114,6 +118,23 @@ Each stage ends with something you can run and look at. Early stages are deliber
 | **Masses as groups, notable people as individuals** (like Dwarf Fortress' historical figures) | Storage is easy; decisions are the expensive part |
 | **Design wide, build narrow** | Plan room for everything, but switch on one system at a time so it can be debugged |
 
+## Made in the agents brainstorm (20 Nov 2026)
+
+| Decision | Why |
+|---|---|
+| **Every person stored** (name, race, parents, skills, family tree); **the family decides**; pops are totals | Storing people is cheap; decisions are the expensive part |
+| **Marriages, children and inheritance** simulated; inheritance rules differ by race | Links villages and kingdoms; landless younger children found new villages |
+| **Every trader tracked as an individual**; notable people step out of their families | Traders are the heart of the game |
+| **Two decision modes:** scoring (utility AI) built first; **evolving neural networks** (neuroevolution) as the second, favourite mode | Scoring is explainable and a baseline; emergence from evolution is the owner's deepest interest |
+| **Personalities for every family**, inherited; **habit**; **limited knowledge** (only news that has reached you) | Different people make different stories; stops the world flipping back and forth |
+| **Prices emerge from agents' price beliefs** on **market days** chosen by lords; wages the same way | The economy should come out of the agents, not from formulas |
+| **Money minted from silver and gold, at first only by the dwarves** | A unique role for the dwarves, and politics straight out of economics |
+| **Banks** for merchants and kings; **every trade recorded** with statistics viewers | Realistic, and the owner loves statistics |
+| **Only humans, elves and dwarves at first**; no orcs or lizardfolk; **no serfdom** for now | Design wide, build narrow; fantasy, not too realistic |
+| "Local AI only for words" **softened**: never for the masses, maybe for a few notables' big decisions, always recorded | Too slow for the masses, and language models aren't repeatable |
+| **A separate test repository, `evolution-sandbox`, builds the foundation** (engine, graphics, agents, statistics) before the world code | Test the base and neuroevolution on something small first |
+| **Headless mode in both projects**: no window, console only, full speed | Much faster, and the way to test the simulation; the simulation never depends on the graphics |
+
 ## Carried over from September
 
 | Decision | Why |
@@ -157,6 +178,13 @@ Each stage ends with something you can run and look at. Early stages are deliber
 - More ideas recorded: factions growing into kingdoms with lords beneath them (one currency for now); people reshaping the land (simple construction, forests felled and replanted, dams, ports, taverns); travel speed by terrain; lessons from history (Rome–Egypt grain ships, the Silk Road, ideas spreading along routes); a checklist of what the world generator still needs; a first sketch of the simulation's ten layers.
 - Magic decided: yes, added later, with hooks built in from the start (aptitudes, goods and races as data, a magic map layer, spreading knowledge). Tree species by biome. Individuals versus groups worked out: a million people fit easily; masses as groups, notable people as individuals. Magic research report in [`docs/research/`](docs/research/).
 - Last ideas of the day: a full "scientific" magic system (runes, magic items, research) rather than Skyrim-style combat magic; no general flight magic, only rare creatures like giant mountain falcons; creatures in the caves. **Stopped here.** Next: brainstorm the agents in a fresh chat, then lesson B (octaves).
+
+### 20 November 2026 (later): the agents brainstorm
+- Think-tank session on the simulation's agents, written up in [note 4.0](docs/design/4.0-agents-brainstorm.md) and [VISION section 13](docs/VISION.md#13-agents-and-the-economy).
+- Agreed: agents versus things; every person named with a family tree; families decide; marriages, children, inheritance; notable people; every trader tracked; settlements, lords, factions, guilds, monasteries and bandits (who can go straight); races organised differently; religion as a future layer; no serfdom.
+- Agreed: a ladder of needs, scoring with personality and habit, limited knowledge, memories; the economy emerging from price beliefs on market days; **the dwarves mint the money**; banks; every trade recorded.
+- Two research reports: [neural networks and local AI for decisions](docs/research/2026-11-20-neural-agents.md), and [evolving agents and emergent behaviour](docs/research/2026-11-20-emergent-evolution.md). The owner's favourite idea: **evolving neural networks**, with emergent trade as a real research question.
+- Decided: a separate repository, [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox), to build the foundation (engine, graphics, headless mode) with a toy world of evolving creatures. Created with its starting docs. **Next chat: the foundation.**
 
 ### Before the restart
 See [`archive/2026-09-plan/PROJECT-2026-09.md`](archive/2026-09-plan/PROJECT-2026-09.md#-session-log) (18–19 September 2026: Python fixes, three-town design, the 200 km world, the first noise lessons).

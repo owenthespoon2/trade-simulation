@@ -8,7 +8,16 @@ Inspired by Dwarf Fortress and RimWorld. Top-down and pixelated. Written in C#.
 
 ---
 
-## 📢 Latest update: 20 November 2026, the restart
+## 📢 Latest update: 20 November 2026, the agents brainstorm
+
+A think-tank session on **who lives in the world and how they decide** ([design note 4.0](docs/design/4.0-agents-brainstorm.md), summary in [VISION section 13](docs/VISION.md#13-agents-and-the-economy)):
+
+- **Every person has a name and a family tree**; families decide what to do, marry, have children and pass on land and personality. Every trader is tracked.
+- **The economy emerges from the agents:** prices come from what people believe goods are worth, on market days, and **only the dwarves mint the money**.
+- **Two ways to decide:** a scoring system first, then **evolving neural networks**, where families pass their "brains" on to their children. Can trade emerge from evolution alone? Nobody seems to have shown it yet.
+- **Next:** choose the foundation (engine, graphics, a fast **headless mode**) in a new test project, [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox).
+
+### Earlier: 20 November 2026, the restart
 
 After a two-month break the project has **restarted** with a clearer idea of what it's for:
 

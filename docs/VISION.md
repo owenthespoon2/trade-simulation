@@ -258,6 +258,8 @@ Ideas to think through. **Nothing is decided yet:**
   - many agents stored as compact arrays;
   - big crowds treated as groups of people rather than one object each, where that's realistic;
   - seeded randomness, so the same seed gives the same world.
+- **A headless mode** *(added 20 Nov)*: the simulation runs with **no window**, just the console, at full speed, and can be asked questions (prices over time, populations, trades). Much faster than with graphics, and the main way to test the simulation. **The simulation never depends on the graphics**; the graphics only read the numbers.
+- **The base is built in a separate test project first** *(added 20 Nov)*: [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox), which chooses the engine and graphics and builds the foundation this project then sits on.
 - **The development PC:** NVIDIA RTX 3060 Ti (8 GB), AMD Ryzen 5 3600 (6 cores, 12 threads), 32 GB of memory. The simulation should run well on it, using all 12 threads for heavy steps like erosion.
 
 ## 9. Local AI: an idea to keep
@@ -269,6 +271,7 @@ Ideas to think through. **Nothing is decided yet:**
 - **Where a local model could help later:**
   - writing things the simulation has *already decided*: town and character names, a chronicle of the world's history, dialogue with traders;
   - running in the background and saving its results.
+- **Softened on 20 Nov (agents brainstorm):** never for the masses, but **maybe for a handful of notable people's big decisions** (a lord deciding on war once a year), with every answer recorded in the save so the world stays repeatable. See [section 13](#13-agents-and-the-economy).
 - Research notes: [`research/2026-11-20-living-world.md`](research/2026-11-20-living-world.md).
 
 ## 10. The layers of the simulation (draft, for discussion)
@@ -384,3 +387,41 @@ Then, when the world and the economy run well, we design the magic system itself
 **The real limit is our time and understanding**, and the Python lesson: **too many systems switched on at once can't be debugged.** So the rule is:
 
 > **Design wide, build narrow.** Plan room for everything (hooks), but build and switch on one system at a time, and only add the next once the last one works.
+
+## 13. Agents and the economy
+
+*(Brainstormed 20 November 2026. Full detail, worked examples and history in [`design/4.0-agents-brainstorm.md`](design/4.0-agents-brainstorm.md).)*
+
+### Who decides
+
+- **Agents** are whatever makes choices; **things** (land, goods, buildings) don't. The two are separate systems: a family lives in a house, but the house isn't part of the family.
+- **Every person is stored** with a name, race, birth year, parents and skills, so everyone has a **family tree**. **Children are born and grow up**, and **marriages** join families and link villages; **royal weddings** link faraway capitals and help trade.
+- **The family is the agent** that decides (work, food, buying and selling, moving). Pops are just totals of families.
+- **Notable people** (lords, mages, founders, every trader) decide for themselves. **Every trader is tracked individually**: traders are the heart of the game.
+- Also agents: **settlements** (villages run by their lord; towns can buy a charter and run themselves), **lords**, **factions and kingdoms**, **guilds**, **monasteries and temples**, and **bandits**. Bandits come from hard times (a village ruined by disaster) and can **go straight**, founding a village or being hired as guards.
+- **Races organise differently:** dwarves in **clans**, elves under **councils of elders**, humans in **feudal** lords and vassals. Inheritance rules differ by race too.
+- **Only humans, elves and dwarves at first.** Later perhaps merfolk, gnomes, giants and our own **tree-folk** (inspired by Tolkien's Ents). **No orcs, no lizardfolk.** **Monsters** changed by magic, carrying valuable magic stones as in *Mushoku Tensei*.
+- **Religion** will be its own layer, like magic: religions develop and spread, shaped by race and land. **Serfdom: not for now** (too realistic for this fantasy world; maybe a future "super-realistic" mode).
+
+### How they decide
+
+- **A ladder of needs:** food → warmth and shelter → safety → comfort → standing and the future. The lowest unmet need comes first.
+- **Two modes:**
+  1. **Scoring** (*utility AI*): score every option from the needs, weighted by **personality**, with **habit** so people don't change their lives lightly. Built first, as the baseline.
+  2. **Evolving neural networks** (*neuroevolution*): each family's small network is **inherited from its parents with small mutations**, and families that survive and prosper pass theirs on. **The owner's favourite idea**, and a genuine research question: nobody seems to have shown trade emerging from evolution alone.
+- **Every family has a personality**, inherited by its children; races have tendencies.
+- **Limited knowledge:** agents only know news that has reached them, so traders must travel to learn prices. **Memories** (famines, robberies) nudge choices for years.
+- **Local language models** only for a handful of notable people's big decisions, with every answer recorded so the world stays repeatable.
+
+### The economy emerges
+
+- **Nobody writes the prices.** Each agent **believes** what goods are worth (a range, coloured by local prices); buyers and sellers bid and ask on **market days**, trade halfway, and learn. **Wages** form the same way.
+- **Market days** are chosen by each town's lord or council, so traders move between towns; yearly **fairs**; hamlets barter any time.
+- **Money is minted from silver and gold, and at first only the dwarves mine and mint it.** They grow rich, but coin is their main export and they must buy food. From that: minting profit, trusted clan coins with **clan marks**, **debasement** by greedy kings, coins flowing outward so faraway hamlets **barter**, food embargoes and minting strikes as politics, coins wearing out, and later other minters and counterfeiters.
+- **Banks** for merchants and kings (bills of exchange make long journeys safer; kings who don't repay ruin them). Peasants use credit with neighbours.
+- **Track everything:** every trade is recorded, with **statistics viewers** for prices, amounts of goods and trades over time.
+- **Watch for real economics emerging:** prices evening out along routes, von Thünen's rings of fields around towns, market towns a day apart, boom-and-bust harvest cycles, the Malthusian trap, wages rising after plagues, inflation after a silver strike.
+
+### Still to brainstorm
+
+Goods and recipes; how agents change the world; keeping it cheap to run; how lords appear; towns buying freedom; religion; war; disease; law and taxes; health and lifespans; culture and language. The checklist is in the design note.

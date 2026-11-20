@@ -18,3 +18,4 @@ One note per system, written **before** the system is built. Each one is the exp
 |---|---|---|
 | 1.0 | [How the world is made](1.0-how-the-world-is-made.md) (pipeline, size, units, test region) | **understood** 20 Nov |
 | 1.1 | [Height](1.1-height.md) | **draft**: lesson A (2D value noise) written |
+| 4.0 | [The agents: brainstorm](4.0-agents-brainstorm.md) (who decides, needs, scoring and neural modes, the economy, dwarven money) | **brainstorm** 20 Nov; goods, world changes and cost still to do |
