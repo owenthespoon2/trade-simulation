@@ -1,6 +1,6 @@
 # Notes
 
-Learning notes for the new world, written as we work things out. For what we're doing now, start at [`PROJECT.md`](../PROJECT.md).
+Maths learning notes, written as we work things out. For what we're doing now, start at [`PROJECT.md`](../PROJECT.md).
 
 | Note | What it is |
 |---|---|

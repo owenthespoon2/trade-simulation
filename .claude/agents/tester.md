@@ -7,11 +7,11 @@ maxTurns: 4
 omitClaudeMd: true
 ---
 
-Run exactly the commands you are given, from the repo root. There is no TypeScript project yet; once `sim/` exists, normally:
+Run exactly the commands you are given, from the repo root. There is no C# project yet; once one exists, normally:
 
-- `npx vitest run <test-file> --reporter=dot`
-- `npx tsc --noEmit 2>&1 | tail -n 25`
+- `dotnet test <test-project> --filter <TestName> --nologo -v q`
+- `dotnet build --nologo -v q 2>&1 | tail -n 25`
 
-Never run a bare `npx vitest` (it starts watch mode and hangs) or the full suite unless the prompt explicitly says "full suite".
+Never run `dotnet watch` (it never exits) or the full test suite unless the prompt explicitly says "full suite".
 
 Reply in at most 8 lines: PASS or FAIL per command, the counts, and for each failure the test name plus the first failing assertion or type error (file:line). No other output. Do not edit files or try to fix anything.

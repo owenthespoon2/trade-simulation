@@ -1,6 +1,8 @@
 # The world formula: learning notes
 
-*Started 19 September 2026. These notes follow the layer plan in [`PROJECT.md`](../PROJECT.md#the-formula), and grow as we go.*
+*Started 19 September 2026. These notes follow the layer plan in [the September plan](../archive/2026-09-plan/PROJECT-2026-09.md#the-formula), and grow as we go.*
+
+> **Since the restart (20 Nov 2026):** Layer 1 below describes the September 200 km lake test world, which is now archived. The maths (smoothstep, the hash, value noise, octaves) carries straight over to the new world; the new world's design notes will live in [`docs/design/`](../docs/design/).
 
 The world is one function: give it a position (x, y) in km, and it gives back the height of the ground there in metres. Sea level is 0 m. The function is built from layers added together, each understood before the next.
 

@@ -6,11 +6,11 @@
   "dataDir": "data/overnight",
   "_dataDir": "Runner logs, runs.jsonl, status.json. Gitignored.",
 
-  "protectedPaths": ["PROJECT.md", "CLAUDE.md", "docs/KIT-RULES.md", "kit.config.json", "archive/"],
+  "protectedPaths": ["PROJECT.md", "README.md", "CLAUDE.md", "docs/VISION.md", "docs/KIT-RULES.md", "kit.config.json", "archive/"],
   "_protectedPaths": "Task sessions must never commit these. PROJECT.md is updated by the owner's own chats, not by runner tasks.",
 
   "claude": {
-    "defaultModel": "opus",
+    "defaultModel": "sonnet",
     "defaultEffort": "medium",
     "maxTurns": 70,
     "tools": "Bash,Read,Edit,Write,Glob,Grep,Agent",
@@ -24,7 +24,7 @@
   },
 
   "hooks": {
-    "dirtyPaths": ["tools", "sim"],
+    "dirtyPaths": ["tools", "src"],
     "restartCommand": "",
     "_restartCommand": "No live app yet. Fill in once the map viewer runs as a dev server.",
     "checkCommand": "",

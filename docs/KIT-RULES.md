@@ -4,7 +4,7 @@ Project copy of the kit's `protocol/RULES.md`. These win over the kit.
 
 ## Owner
 
-- Hobby project; the owner works on it in occasional sessions, sometimes months apart, from the desktop app. They're learning git and TypeScript, so they want to understand each step rather than receive finished work.
+- Hobby project; the owner works on it in occasional sessions, sometimes months apart, from the desktop app. Claude writes the code (C#); the owner must understand every system through its design note before it is built.
 
 ## Money
 
@@ -19,11 +19,11 @@ Project copy of the kit's `protocol/RULES.md`. These win over the kit.
 
 ## Read-only sources
 
-- `archive/python-prototype/` is frozen at the tag `python-prototype`. Never write there.
+- `archive/` is frozen (the Python prototype at the tag `python-prototype`, and the September plan). Never write there.
 
 ## Protected files
 
-- Never modify or stage in a runner task: `PROJECT.md`, `CLAUDE.md`, `docs/KIT-RULES.md`, `kit.config.json`, `archive/` (also in `kit.config.json` → `protectedPaths`).
+- Never modify or stage in a runner task: `PROJECT.md`, `README.md`, `CLAUDE.md`, `docs/VISION.md`, `docs/KIT-RULES.md`, `kit.config.json`, `archive/` (also in `kit.config.json` → `protectedPaths`).
 
 ## Git
 
@@ -35,4 +35,4 @@ Project copy of the kit's `protocol/RULES.md`. These win over the kit.
 
 ## App
 
-- No live app yet. The first one will be the map viewer (step 3a), on localhost only.
+- No live app yet. The first one will be the map viewer (stage 1), on localhost only.
