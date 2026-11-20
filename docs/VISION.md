@@ -319,6 +319,13 @@ Ideas to think through. **Nothing is decided yet:**
   - **elves cultivate herbs**;
   - **humans brew potions** or sell research.
 - **Magic develops over history:** techniques are discovered and spread along routes, just like other knowledge (simulation layer 9).
+- **A full, "scientific" magic system, not Skyrim's.**
+  - In Skyrim, magic is mostly one person's fighting tool.
+  - Here it's a whole field of knowledge, like Mushoku Tensei's: researched, taught, ranked, with **magic runes** and **magic items** that can be made, sold and traded.
+  - It has limits, but it touches everything: crafts, healing, disasters, trade.
+- **Limits that keep it from breaking the world.** For example, if casting tires the caster, a mage can't grow crops all day every day, but can stop a flood or a fire once in a while. That helps the world without replacing farming.
+- **No general flight magic**, so transport isn't broken. Flying belongs only to particular creatures or races. For example, **giant falcons that live in the mountains**, which are very rare and hard to catch or tame. A tamed one would be an extraordinary, valuable way to carry things.
+- **Creatures in the caves:** the underground will have its own life and dangers.
 
 ### The risk
 
