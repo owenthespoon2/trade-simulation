@@ -16,5 +16,5 @@ One note per system, written **before** the system is built. Each one is the exp
 
 | # | Note | Status |
 |---|---|---|
-| 1.0 | How the world is made (pipeline, size, units, test region) | not started |
+| 1.0 | [How the world is made](1.0-how-the-world-is-made.md) (pipeline, size, units, test region) | **draft**, being gone through |
 | 1.1 | Height | not started (maths lessons so far in [`notes/world-formula.md`](../../notes/world-formula.md)) |

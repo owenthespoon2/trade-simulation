@@ -19,9 +19,9 @@
 
 | # | Step | Who | Status |
 |---|---|---|---|
-| 1 | Read [`docs/VISION.md`](docs/VISION.md) and correct anything that's wrong or missing | You | ▶ now |
-| 2 | Install the free **.NET SDK** (version 8 or newer), so C# can be built on this PC. Not installed yet | You, or Claude with your OK | next |
-| 3 | **Design note 1.0: how the world is made.** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region | Together | next |
+| 1 | Read [`docs/VISION.md`](docs/VISION.md) and correct anything that's wrong or missing | You | any time |
+| 2 | Install the free **.NET SDK** | Claude | ✅ .NET 10 (long-term support) installed 20 Nov |
+| 3 | **[Design note 1.0: how the world is made](docs/design/1.0-how-the-world-is-made.md).** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region. Draft written; answer its questions in section 10 | Together | ▶ now |
 | 4 | **Design note 1.1: height.** Finish the noise lessons (2D value noise, octaves, simplex), then shape a landmass with ocean around it | Together | after 3 |
 | 5 | Build 1.0 + 1.1 in C#, with a first map picture | Claude, after you understand the notes | after 4 |
 
