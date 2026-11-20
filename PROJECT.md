@@ -108,6 +108,9 @@ Each stage ends with something you can run and look at. Early stages are deliber
 | **Local AI only for words** (names, chronicles, dialogue), never for simulation decisions | Too slow at ~16 tokens a second; rules are faster, repeatable and understood |
 | **One currency for now** | Several currencies would be realistic but much harder |
 | **Construction stays simple**: towns have houses, markets, ports and so on, but this is not a colony builder | Realistic towns without turning the project into a different game |
+| **Magic: yes, but later.** Hooks now (aptitudes, goods and races as data, a magic map layer, spreading knowledge); the system itself after the world and economy work | Magic makes the world richer but can break the economy; hooks cost almost nothing now |
+| **Masses as groups, notable people as individuals** (like Dwarf Fortress' historical figures) | Storage is easy; decisions are the expensive part |
+| **Design wide, build narrow** | Plan room for everything, but switch on one system at a time so it can be debugged |
 
 ## Carried over from September
 
@@ -150,6 +153,7 @@ Each stage ends with something you can run and look at. Early stages are deliber
 - Started note 1.1 (height): lesson A, 2D value noise, with a slower step-by-step explanation and a side note on finite element shape functions.
 - New ideas recorded in [`docs/VISION.md`](docs/VISION.md): simulation first, player last; realistic slow world generation; the underground; humans, elves and dwarves with homelands; islands; boats; animals; levels of detail; local AI. Two research reports in [`docs/research/`](docs/research/). Roadmap reordered into Part A (the world) and Part B (the game).
 - More ideas recorded: factions growing into kingdoms with lords beneath them (one currency for now); people reshaping the land (simple construction, forests felled and replanted, dams, ports, taverns); travel speed by terrain; lessons from history (Rome–Egypt grain ships, the Silk Road, ideas spreading along routes); a checklist of what the world generator still needs; a first sketch of the simulation's ten layers.
+- Magic decided: yes, added later, with hooks built in from the start (aptitudes, goods and races as data, a magic map layer, spreading knowledge). Tree species by biome. Individuals versus groups worked out: a million people fit easily; masses as groups, notable people as individuals. Magic research report in [`docs/research/`](docs/research/).
 
 ### Before the restart
 See [`archive/2026-09-plan/PROJECT-2026-09.md`](archive/2026-09-plan/PROJECT-2026-09.md#-session-log) (18–19 September 2026: Python fixes, three-town design, the 200 km world, the first noise lessons).
