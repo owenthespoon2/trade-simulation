@@ -10,6 +10,21 @@ A **fantasy medieval world** that runs by itself: land shaped by maths, weather 
 
 **Inspirations:** Dwarf Fortress (a world generated from maths, then a living history on top), RimWorld (a simulation that creates stories), a top-down pixel look.
 
+## Simulation first, game later
+
+*(Decided 20 November 2026.)*
+
+**For a long time this is a simulated world, not a game.** The goal is a realistic world that runs on its own:
+- civilisations growing;
+- traders doing their own thing;
+- people moving and founding colonies;
+- an economy that changes.
+
+You leave it running and watch where it goes. **The player comes in near the end**, once the world works without one.
+
+- **PC only**, a program that runs on the computer. No web version for a long time.
+- **The whole world is always running.** Something happening on the far side of the world still changes the economy while you watch somewhere else.
+
 ---
 
 ## 1. The world
@@ -34,6 +49,28 @@ A **fantasy medieval world** that runs by itself: land shaped by maths, weather 
 
 **Real-world example of what we want** (not a real country, just the feel): Japan has a cold north where little grows, a mountainous rice-growing middle, and a hot south with tea and bamboo. Each region makes different things, so each region needs the others.
 
+### Realism over speed: a slow, physical world generator
+
+*(Added 20 November 2026.)* Players of realism games like Dwarf Fortress happily leave the computer for **5–10 minutes** while a world generates. So world generation can **simulate** how land forms, instead of only drawing it from formulas:
+
+- **Erosion:** rivers wear down mountains over a long simulated time, carving realistic branching valleys.
+- **Rock hardness:** hard rock resists erosion and soft rock wears away, giving cliffs, plateaus and ragged coasts. Pieces of land can be cut off and become **islands**.
+- **Volcanoes**, like Japan's: volcanic mountains and chains of volcanic islands.
+- **Islands:** at first simply generated; later, also produced by erosion and volcanoes. **Island peoples have their own economy**: fishing, and selling sea goods while buying what they can't make.
+- **Tectonic plates** *(suggested by research)*: plates colliding raise mountain ranges and volcanic arcs, which gives real-looking ranges instead of noise blobs.
+
+### The underground
+
+*(Added 20 November 2026.)* Dwarves and other fantasy creatures need a world **below** the surface:
+
+- natural **caves and caverns**;
+- **ore and minerals**, laid down in rock layers that follow real geology;
+- **magma** deep down, feeding the volcanoes.
+
+**Built after the surface.** First the land above ground, then the underground generated from it.
+
+Research notes: [`research/2026-11-20-world-generation.md`](research/2026-11-20-world-generation.md).
+
 ## 2. Civilisations and species
 
 - **Settlements grow where life is possible**: near water, on fertile flat land, on coasts and rivers, at crossings.
@@ -43,7 +80,14 @@ A **fantasy medieval world** that runs by itself: land shaped by maths, weather 
   - plains give grain;
   - a warm wet south gives tea and bamboo;
   - mountains give ore and stone.
-- **Fantasy species with their own homes and economies.** Example: **dwarves in the mountains** mine, smelt and sell metal goods. They can't grow crops, so they have to buy food, but they do farm mushrooms underground. *Other species are still to decide.*
+- **Fantasy species with their own homes and economies.** The main three:
+  - **Humans:** plains, rivers and coasts, farming and trading.
+  - **Elves:** the forests.
+  - **Dwarves:** the mountains, living in caves or carved halls. They mine, smelt and sell metal goods. They can't grow crops, so they have to buy food, but they do farm mushrooms underground.
+  - *Maybe other species later.*
+- **Each race has an origin place**, a homeland it starts from, and spreads out by **founding colonies**. Part of the fun is leaving the world running and watching where towns grow and where people decide to settle.
+- **Island peoples** live by the sea: fishing, boats, sea trade.
+- **Animals:** wild animals for hunters, herds that move with the seasons. A small part of the world, but it gives hunters something real to hunt.
 - **Sizes from cities down to hamlets.** A few hundred big towns and cities, plus countless small places: a farmstead by the road, a woodcutter's hut in the forest.
 - **Money isn't everywhere.** Cities use coin. Subsistence farmers out in the fields and forests may have no money at all, and only **barter**: your salt for their eggs. *Historically, medieval peasants used some coin, but much rural exchange was barter, credit or payment in kind.*
 
@@ -69,10 +113,14 @@ The ideas that make the world feel alive. None of these are drawn by hand; they 
 - **Fields appear** around settlements, sized by how many mouths there are to feed and how much fertile land is in reach.
 - **Industries follow the land:** fishing villages on rivers, mining towns in the hills, logging camps in the forest.
 - **Settlements grow, shrink and are founded** as their economies do well or badly.
+- **Transport of many kinds**, as in a medieval fantasy world:
+  - on foot, horses, carts and caravans;
+  - **boats** on rivers, lakes and the sea.
+  - Historically, water transport was many times cheaper than land, so rivers, coasts and islands matter a lot.
 
-## 5. The player: a trader
+## 5. The player: a trader (much later)
 
-The game mechanic is trading; the world is the star.
+The game mechanic is trading; the world is the star. **The player is one of the last things built**, after the world runs well on its own (see "Simulation first" at the top).
 
 | Stage | You have | What changes |
 |---|---|---|
@@ -109,6 +157,20 @@ Ideas to think through. **Nothing is decided yet:**
 - **The numbers are the truth; the pictures are drawn from them.** That way a zoomed-in town view (houses, market square) can come later without rewriting the simulation.
 - **Scale it down until it works, then scale it up.** A small region first, a whole country later.
 
+### Levels of detail
+
+*(Added 20 November 2026.)* Like Dwarf Fortress, where you can zoom right in until one tile is about the size of a person:
+
+| Level | Detail | What you see |
+|---|---|---|
+| World | ~1 km per cell | Countries, biomes, rivers, roads, towns as dots |
+| Region | ~100 m (1 hectare) | Fields, villages, forests, road routes |
+| Town | ~1 m, maybe finer | Walking through a town: shops, market stalls, houses, people |
+
+- **Finer levels are generated when they're needed**, at different stages. Nobody needs every street of every town worked out in advance.
+- **The whole world keeps simulating while you're zoomed in** on one place. Far away it runs coarsely, in groups and averages; close up it runs in detail.
+- This is one of the hard technical problems, so it gets its own design note when we reach it.
+
 ## 8. How it's built
 
 - **C# / .NET** for the simulation. It's fast, an AI writes it well, and the owner can read it. Rust is the fallback if we ever need the absolute maximum speed.
@@ -117,3 +179,15 @@ Ideas to think through. **Nothing is decided yet:**
   - many agents stored as compact arrays;
   - big crowds treated as groups of people rather than one object each, where that's realistic;
   - seeded randomness, so the same seed gives the same world.
+- **The development PC:** NVIDIA RTX 3060 Ti (8 GB), AMD Ryzen 5 3600 (6 cores, 12 threads), 32 GB of memory. The simulation should run well on it, using all 12 threads for heavy steps like erosion.
+
+## 9. Local AI: an idea to keep
+
+*(Added 20 November 2026.)* The owner experiments with local AI models (Qwen and others) on the 8 GB graphics card, at around 16 tokens per second.
+
+- **An old idea:** an AI that helps run the world, keeping things realistic and in balance, like a "game master".
+- **Current thinking:** the realism should come from **hand-coded realistic systems**, which are fast, repeatable and understood. A local model at 16 tokens a second is far too slow to make decisions every tick.
+- **Where a local model could help later:**
+  - writing things the simulation has *already decided*: town and character names, a chronicle of the world's history, dialogue with traders;
+  - running in the background and saving its results.
+- Research notes: [`research/2026-11-20-living-world.md`](research/2026-11-20-living-world.md).

@@ -23,22 +23,25 @@ After a two-month break the project has **restarted** with a clearer idea of wha
 
 ## The plan in one table
 
+**Simulation first:** a world that runs by itself comes before any player.
+
 | Stage | What |
 |---|---|
 | 0 | Restart and plan ✅ |
-| 1 | **The world:** height, climate, rivers, biomes, a pixel map ▶ *now* |
-| 2 | Where people live: settlements, species, what each place makes |
-| 3 | Produce and eat |
-| 4 | Markets, prices, money and barter |
-| 5 | AI traders, routes, roads that emerge |
-| 6 | The player: a trader on foot |
-| 7 | Horse, cart, caravan, company |
-| 8 | A world that reacts: weather, harvests, your choices |
-| 9 | Settle down: property and politics |
-| 10 | Proper pixel-art looks |
+| 1 | **The surface world:** height, climate, rivers, biomes, a pixel map ▶ *now* |
+| 2 | A realistic world generator: plates, volcanoes, erosion, islands |
+| 3 | The underground: rock layers, ore, caves, magma |
+| 4 | Peoples and history: humans, elves and dwarves spreading from their homelands |
+| 5 | Produce and eat; animals and hunting |
+| 6 | Markets, money, barter and credit |
+| 7 | Traders, boats, routes and roads that emerge |
+| 8 | A world that changes on its own: seasons, weather, growth, colonies |
+| 9–13 | **The game:** zooming from world to town, the player as a trader, horse to caravan to company, settling down, pixel art |
 
 ## Ideas waiting their turn
 
+- Humans, elves and dwarves, each with a homeland, founding colonies you can watch spread.
+- Island peoples with fishing and sea-trade economies; boats on rivers and the sea.
 - Paths that traders use become tracks, then paved roads.
 - Bad weather in one region changes crop prices across the country.
 - Barter in poor rural places; coin in towns and cities.
@@ -46,6 +49,9 @@ After a two-month break the project has **restarted** with a clearer idea of wha
 - Two speeds of time: slow in town, fast on the road. Prices you saw last month may be stale when you arrive.
 - Hire your own traders and run a company; settle down and get into local politics.
 - A Japan-sized fantasy country with a few hundred cities and countless hamlets.
+- An underground of caves, ore and magma for the dwarves; volcanoes like Japan's.
+- Zoom from the whole world down to walking through a town at 1 m detail, while the rest of the world keeps running.
+- Local AI models writing names, chronicles and dialogue for what the simulation decides.
 
 ## Where to look
 
