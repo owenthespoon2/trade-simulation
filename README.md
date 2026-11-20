@@ -8,7 +8,16 @@ Inspired by Dwarf Fortress and RimWorld. Top-down and pixelated. Written in C#.
 
 ---
 
-## 📢 Latest update: 20 November 2026, the agents brainstorm
+## 📢 Latest update: 21 November 2026, the foundation is planned
+
+The base this game will be built on is agreed, in the sister project [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox) ([design note 0](https://github.com/owenthespoon2/evolution-sandbox/blob/main/docs/design/0-foundation.md)):
+
+- **MonoGame** for graphics (the family behind Stardew Valley and Celeste), with proper in-game menus later.
+- **Headless first:** the simulation is a library that never depends on the graphics, so it can run at full speed with no window, and the window only draws the numbers.
+- **Every trade recorded** in a fast analysis database, with **Python** reports, so an AI can help answer "why are they trading this?".
+- **Next:** build it in `evolution-sandbox`, starting with a speed test.
+
+### Earlier: 20 November 2026, the agents brainstorm
 
 A think-tank session on **who lives in the world and how they decide** ([design note 4.0](docs/design/4.0-agents-brainstorm.md), summary in [VISION section 13](docs/VISION.md#13-agents-and-the-economy)):
 

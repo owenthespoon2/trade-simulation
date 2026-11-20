@@ -260,6 +260,13 @@ Ideas to think through. **Nothing is decided yet:**
   - seeded randomness, so the same seed gives the same world.
 - **A headless mode** *(added 20 Nov)*: the simulation runs with **no window**, just the console, at full speed, and can be asked questions (prices over time, populations, trades). Much faster than with graphics, and the main way to test the simulation. **The simulation never depends on the graphics**; the graphics only read the numbers.
 - **The base is built in a separate test project first** *(added 20 Nov)*: [`evolution-sandbox`](https://github.com/owenthespoon2/evolution-sandbox), which chooses the engine and graphics and builds the foundation this project then sits on.
+- **The foundation, agreed 21 Nov** ([evolution-sandbox note 0](https://github.com/owenthespoon2/evolution-sandbox/blob/main/docs/design/0-foundation.md)):
+  - **MonoGame** for drawing, **Dear ImGui** for developer panels and live charts, **Myra or our own UI** for the game's menus and windows.
+  - **One simulation library** that never references graphics; a headless console and a window on top. Outside changes are **commands applied between ticks**; **save/load** from day one.
+  - **Repeatable:** our own seeded random generator, a fixed tick order, a checksum test. **Parallel steps inside a tick** (read anything, write only your own slot) use the CPU's cores for this one big world.
+  - **Data:** common actions counted, **every trade** and other meaningful events in **Parquet + DuckDB**, and agents' **reasons** for decisions logged, so "why are they trading this?" can be answered. **Python** makes reports and does analysis.
+  - The shared **Foundation** library comes into this repository as a **git submodule**.
+  - Only what's on screen is drawn: a few thousand moving figures at most; the map is drawn once into a picture and updated where it changes.
 - **The development PC:** NVIDIA RTX 3060 Ti (8 GB), AMD Ryzen 5 3600 (6 cores, 12 threads), 32 GB of memory. The simulation should run well on it, using all 12 threads for heavy steps like erosion.
 
 ## 9. Local AI: an idea to keep
@@ -409,6 +416,7 @@ Then, when the world and the economy run well, we design the magic system itself
 - **Two modes:**
   1. **Scoring** (*utility AI*): score every option from the needs, weighted by **personality**, with **habit** so people don't change their lives lightly. Built first, as the baseline.
   2. **Evolving neural networks** (*neuroevolution*): each family's small network is **inherited from its parents with small mutations**, and families that survive and prosper pass theirs on. **The owner's favourite idea**, and a genuine research question: nobody seems to have shown trade emerging from evolution alone.
+  3. *(Added 21 Nov, later.)* **Reinforcement learning:** networks that learn during their lives from a reward that describes what people want (being fed, comfortable, secure). Likely the best fit for agents that "act like people". **Imitation learning** can give them a head start by copying the scoring AI first. Order: see whether trade emerges by evolution in `evolution-sandbox` first, then try RL.
 - **Every family has a personality**, inherited by its children; races have tendencies.
 - **Limited knowledge:** agents only know news that has reached them, so traders must travel to learn prices. **Memories** (famines, robberies) nudge choices for years.
 - **Local language models** only for a handful of notable people's big decisions, with every answer recorded so the world stays repeatable.
