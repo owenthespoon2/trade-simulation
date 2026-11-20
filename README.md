@@ -17,7 +17,7 @@ After a two-month break the project has **restarted** with a clearer idea of wha
 - **New way of working:** every system is written up as a design note with all its maths, understood, and only then built. The notes stay as the explanation of the code.
 - **First up: the world.** Height, temperature, rain, rivers, fertility and biomes, on a small test region first.
 
-**Now:** Stage 0, planning. **Next:** design note 1.0, how the world is made. Details in [`PROJECT.md`](PROJECT.md#-now).
+**Now:** Stage 1, the world. [Design note 1.0](docs/design/1.0-how-the-world-is-made.md) (how the world is made) is agreed. **Next:** note 1.1, height. Details in [`PROJECT.md`](PROJECT.md#-now).
 
 ---
 
@@ -25,8 +25,8 @@ After a two-month break the project has **restarted** with a clearer idea of wha
 
 | Stage | What |
 |---|---|
-| 0 | Restart and plan ▶ *now* |
-| 1 | **The world:** height, climate, rivers, biomes, a pixel map |
+| 0 | Restart and plan ✅ |
+| 1 | **The world:** height, climate, rivers, biomes, a pixel map ▶ *now* |
 | 2 | Where people live: settlements, species, what each place makes |
 | 3 | Produce and eat |
 | 4 | Markets, prices, money and barter |
