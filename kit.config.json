@@ -1,0 +1,45 @@
+{
+  "_comment": "Settings for the AI supervisor kit (C:\\Projects\\ai-supervisor-kit). Paths are relative to this repo. Keys starting with _ are notes.",
+
+  "board": "BOARD.md",
+  "taskPrompt": "",
+  "dataDir": "data/overnight",
+  "_dataDir": "Runner logs, runs.jsonl, status.json. Gitignored.",
+
+  "protectedPaths": ["PROJECT.md", "CLAUDE.md", "docs/KIT-RULES.md", "kit.config.json", "archive/"],
+  "_protectedPaths": "Task sessions must never commit these. PROJECT.md is updated by the owner's own chats, not by runner tasks.",
+
+  "claude": {
+    "defaultModel": "opus",
+    "defaultEffort": "medium",
+    "maxTurns": 70,
+    "tools": "Bash,Read,Edit,Write,Glob,Grep,Agent",
+    "settingSources": "project,local",
+    "skipPermissions": true,
+    "extraArgs": ["--exclude-dynamic-system-prompt-sections", "--strict-mcp-config"],
+    "env": {
+      "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+      "BASH_MAX_OUTPUT_LENGTH": "8000"
+    }
+  },
+
+  "hooks": {
+    "dirtyPaths": ["tools", "sim"],
+    "restartCommand": "",
+    "_restartCommand": "No live app yet. Fill in once the map viewer runs as a dev server.",
+    "checkCommand": "",
+    "checkDelaySeconds": 60,
+    "queueStatusCommand": "",
+    "queueBusyPattern": "\"queued\"|\"processing\""
+  },
+
+  "watch": {
+    "tokenLimit": 6000000,
+    "stallMinutes": 45
+  },
+
+  "gemini": {
+    "blocked": ["^data[\\\\/]", "^\\.env", "\\.(db|sqlite|pdf|png|jpe?g|heic|webp)$"],
+    "usageLog": "data/overnight/gemini-usage.jsonl"
+  }
+}

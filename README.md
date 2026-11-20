@@ -9,5 +9,6 @@ It's being rebuilt in TypeScript, one small, fully understood piece at a time.
 | | |
 |---|---|
 | [`PROJECT.md`](PROJECT.md) | ⭐ **Start here.** What we're doing now, next steps, decisions, the world design and the roadmap |
+| [`BOARD.md`](BOARD.md) | Small jobs queued for unattended AI runs (AI supervisor kit) |
 | [`notes/`](notes/README.md) | Learning notes for the new world, e.g. [the world formula](notes/world-formula.md) |
 | [`archive/python-prototype/`](archive/python-prototype/README.md) | The original Python/Tkinter prototype and its notes. Finished and frozen at the git tag `python-prototype` |

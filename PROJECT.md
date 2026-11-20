@@ -1,6 +1,6 @@
 # Trade Simulation: project file
 
-*Last updated: 19 September 2026*
+*Last updated: 20 November 2026*
 
 **Read this first when you come back.** The top section says what we're doing and what's next. Everything below it is background. It gets updated at the end of every session.
 
@@ -13,12 +13,14 @@
 **Where things stand:**
 - The **[world design](#-the-world) is confirmed**: a 200 × 200 km world described by a formula, with a central lake, hills to the north, forest to the west, the sea to the south, and one straight river running north to south through the lake.
 - The Python prototype is **finished and frozen** at the git tag `python-prototype`, and archived with its notes in [`archive/python-prototype/`](archive/python-prototype/README.md).
+- **New (20 Nov):** the project now uses the **AI supervisor kit** (`C:\Projects\ai-supervisor-kit`). Small, well-defined jobs go on [`BOARD.md`](BOARD.md) and can run unattended; design and learning stay in normal chats. Rules: [`CLAUDE.md`](CLAUDE.md), [`docs/KIT-RULES.md`](docs/KIT-RULES.md).
 
 ## Next steps
 
 | # | Step | Who | Status |
 |---|---|---|---|
-| 1 | **Design the [world formula](#the-formula) together**, layer by layer. Layer 1 (the big shape) is done. **Layer 2 (noise) is in progress**: pick up from "Where we stopped" in [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped). Then rivers, then terrain | Together | ▶ now |
+| 0 | **Optional, unattended:** rebuild the lost Layer 1 map explorer and the noise explorer as pages in `tools/` (board tasks V1, V2), so the lessons have their tools back without asking each time | Runner | ready, waiting for a go |
+| 1 | **Design the [world formula](#the-formula) together**, layer by layer. Layer 1 (the big shape) is done. **Layer 2 (noise) is in progress**: pick up from "Where we stopped" in [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped), starting with 2D value noise. Then rivers, then terrain | Together | ▶ now |
 | 2 | **Build step 3a** in TypeScript: the formula, plus a page that draws the map. (Node.js v23 is already installed) | Together | after 1 |
 | 3 | **Step 3b**: three towns as patches of 1-hectare tiles around the lake | Together | later |
 | 4 | **Step 3c**: produce and eat, with the three-town numbers redone for fish and land | Together | later |
@@ -27,7 +29,8 @@
 
 1. In `C:\Projects\trade-system-prototype`, run `git pull`.
 2. Read **"Where we stopped"** at the bottom of [`notes/world-formula.md`](notes/world-formula.md#where-we-stopped).
-3. Tell Claude where to continue. It can rebuild the interactive map and noise explorers if they're not in the chat.
+3. Tell Claude where to continue. It can rebuild the interactive map and noise explorers if they're not in the chat (or open them from `tools/` once V1/V2 have run).
+4. To run board tasks unattended, open a new chat here and paste the **Supervisor** starter prompt from the kit's `README.md`.
 
 ---
 
@@ -53,6 +56,7 @@
 | 19 Sep 2026 | **Layer 1 numbers:** lake about a day's walk across, north edge about 840 m, coast at y = −80, 1 m per km slope | A day's walk suits trade; hills of that size look big from afar |
 | 19 Sep 2026 | **Hillfort sits at the foot of the hills**, a little back from the shore | Hills (and later mines) within its work area |
 | 19 Sep 2026 | **Python code and notes archived** in `archive/python-prototype/` | Keep the repo focused on the new world; the lessons live on in this file |
+| 20 Nov 2026 | **Adopt the AI supervisor kit**: a short `BOARD.md` of well-defined jobs the runner can do unattended; learning and design stay together in normal chats | Lets the project move a little between sessions months apart, cheaply, without losing the "understand every piece" rule |
 
 ---
 
@@ -367,6 +371,10 @@ Small, and understood. A new, tiny core that grows one piece at a time, with eve
 ---
 
 # 📓 Session log
+
+### 20 November 2026
+- Came back after two months. Checked the repo: everything merged, nothing lost, except one uncommitted note (where smoothstep's 3 and 2 come from), now saved in [`notes/world-formula.md`](notes/world-formula.md).
+- Set the project up for the AI supervisor kit: `kit.config.json`, `BOARD.md` (two explorer tasks queued), `CLAUDE.md`, `docs/KIT-RULES.md`, `scout` and `tester` agents in `.claude/agents/`, and a `.gitignore`. Runner dry run passes.
 
 ### 19 September 2026
 - Decided settlements should sit on a real map, with terrain belonging to the world.

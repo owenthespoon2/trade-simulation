@@ -32,6 +32,24 @@ s(t) = 3t² − 2t³   ( = t × t × (3 − 2t) )
 
 It's the simplest polynomial that does all of that: the one cubic with those four conditions (start value, end value, start slope, end slope).
 
+**Where the 3 and the 2 come from.** They aren't chosen for looks; the four rules force them. Each rule needs one adjustable number, so four rules need a cubic:
+
+```
+s(t)  = a·t³ + b·t² + c·t + d
+s′(t) = 3a·t² + 2b·t + c
+
+s(0)  = d        = 0   →  d = 0
+s′(0) = c        = 0   →  c = 0
+s(1)  = a + b    = 1   →  b = 1 − a
+s′(1) = 3a + 2b  = 0   →  3a + 2(1 − a) = 0  →  a = −2,  b = 3
+
+s(t) = 3t² − 2t³ = t²(3 − 2t)      (the factorised form just needs fewer multiplications)
+```
+
+Simpler curves can't pass all four rules. A straight line (t) has slope 1 at both ends, so creases. t² starts flat but ends with slope 2. **3t²** does the lifting, but on its own would overshoot to 3; **−2t³** is tiny early on and pulls the end back down to exactly 1 and exactly flat. The slope 6t(1 − t) is 0 at the ends and 1.5 in the middle: steeper than a straight line, to catch up for the slow start.
+
+*Bonus:* add two more rules, curvature (s″) also 0 at both ends, and the same method gives **6t⁵ − 15t⁴ + 10t³** ("smootherstep"), the fade curve Perlin noise uses.
+
 To use it between any two values a and b, first turn the position into a fraction, then clamp it:
 
 ```
