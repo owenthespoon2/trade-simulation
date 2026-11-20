@@ -8,10 +8,11 @@
 
 # 📍 NOW
 
-**Phase: Stage 1, the world.** The plan is settled and the world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)). Next is note 1.1, height. No code yet.
+**Phase: Stage 1, the world, plus brainstorming the simulation.** The world pipeline is agreed ([note 1.0](docs/design/1.0-how-the-world-is-made.md)), and note 1.1 (height) has its first lesson. No code yet.
 
 **Where things stand:**
-- **The game is defined:** a fantasy medieval world where you play a wandering trader who works their way up. See [`docs/VISION.md`](docs/VISION.md).
+- **The vision is big and written down:** a fantasy medieval world that runs by itself (humans, elves and dwarves; factions and kingdoms; an economy; traders and boats; people reshaping the land; magic later), with the player coming last. See [`docs/VISION.md`](docs/VISION.md).
+- **Next conversation: brainstorm the agents** (what people, traders, towns and lords strive for, how they decide, groups versus individuals, goods and recipes). Starting in a fresh chat, because this one got long.
 - **The language is chosen: C# / .NET.** Claude writes the code; you understand every piece through design notes before it's built.
 - The September work (Python prototype, 200 km lake world, TypeScript plan) is in [`archive/`](archive/). The noise maths in [`notes/world-formula.md`](notes/world-formula.md) carries over.
 
@@ -22,8 +23,9 @@
 | 1 | Read [`docs/VISION.md`](docs/VISION.md) and correct anything that's wrong or missing | You | any time |
 | 2 | Install the free **.NET SDK** | Claude | ✅ .NET 10 (long-term support) installed 20 Nov |
 | 3 | **[Design note 1.0: how the world is made](docs/design/1.0-how-the-world-is-made.md).** The whole world-generation pipeline on one page: height → temperature → rain → rivers → fertility → biomes, the world's size, units and the size of the test region. All five proposals agreed | Together | ✅ understood 20 Nov |
-| 4 | **Design note 1.1: height.** Finish the noise lessons (2D value noise, octaves, simplex), then shape a landmass with ocean around it | Together | ▶ now |
-| 5 | Build 1.0 + 1.1 in C#, with a first map picture | Claude, after you understand the notes | after 4 |
+| 4 | **Brainstorm the agents** (think tank, new chat): who the agents are, what each strives for, how they decide, groups versus individuals, goods and recipes. Results go into `docs/VISION.md` and a new note in `docs/design/` | Together | ▶ next chat |
+| 5 | **Design note 1.1: height.** Lesson A (2D value noise) done; next lesson B, octaves; then simplex, the landmass, mountain ranges | Together | after 4 |
+| 6 | Build 1.0 + 1.1 in C#, with a first map picture | Claude, after you understand the notes | after 5 |
 
 ## Resume quickly
 
@@ -154,6 +156,7 @@ Each stage ends with something you can run and look at. Early stages are deliber
 - New ideas recorded in [`docs/VISION.md`](docs/VISION.md): simulation first, player last; realistic slow world generation; the underground; humans, elves and dwarves with homelands; islands; boats; animals; levels of detail; local AI. Two research reports in [`docs/research/`](docs/research/). Roadmap reordered into Part A (the world) and Part B (the game).
 - More ideas recorded: factions growing into kingdoms with lords beneath them (one currency for now); people reshaping the land (simple construction, forests felled and replanted, dams, ports, taverns); travel speed by terrain; lessons from history (Rome–Egypt grain ships, the Silk Road, ideas spreading along routes); a checklist of what the world generator still needs; a first sketch of the simulation's ten layers.
 - Magic decided: yes, added later, with hooks built in from the start (aptitudes, goods and races as data, a magic map layer, spreading knowledge). Tree species by biome. Individuals versus groups worked out: a million people fit easily; masses as groups, notable people as individuals. Magic research report in [`docs/research/`](docs/research/).
+- Last ideas of the day: a full "scientific" magic system (runes, magic items, research) rather than Skyrim-style combat magic; no general flight magic, only rare creatures like giant mountain falcons; creatures in the caves. **Stopped here.** Next: brainstorm the agents in a fresh chat, then lesson B (octaves).
 
 ### Before the restart
 See [`archive/2026-09-plan/PROJECT-2026-09.md`](archive/2026-09-plan/PROJECT-2026-09.md#-session-log) (18–19 September 2026: Python fixes, three-town design, the 200 km world, the first noise lessons).

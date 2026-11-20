@@ -17,7 +17,7 @@ After a two-month break the project has **restarted** with a clearer idea of wha
 - **New way of working:** every system is written up as a design note with all its maths, understood, and only then built. The notes stay as the explanation of the code.
 - **First up: the world.** Height, temperature, rain, rivers, fertility and biomes, on a small test region first.
 
-**Now:** Stage 1, the world. [Design note 1.0](docs/design/1.0-how-the-world-is-made.md) (how the world is made) is agreed. **Next:** note 1.1, height. Details in [`PROJECT.md`](PROJECT.md#-now).
+**Now:** Stage 1, the world: [note 1.0](docs/design/1.0-how-the-world-is-made.md) agreed, [note 1.1](docs/design/1.1-height.md) (height) started. The vision has grown a lot: factions and kingdoms, people reshaping the land, an underground, and magic later. **Next:** brainstorm the simulation's agents. Details in [`PROJECT.md`](PROJECT.md#-now).
 
 ---
 
